@@ -1,0 +1,1434 @@
+{% extends "base.html" %}
+
+{% block title %}Salida de Productos - Inventario QR{% endblock %}
+
+{% block content %}
+<div class="salida-page">
+    <div class="page-header">
+        <h1><i class="fas fa-arrow-up"></i> Salida de Productos</h1>
+        <p class="subtitle">Registra la salida de productos del inventario</p>
+        
+        <div class="header-actions">
+            <a href="/escanear?mode=salida" class="btn btn-warning">
+                <i class="fas fa-camera"></i> Escanear Salida
+            </a>
+            <a href="/productos" class="btn btn-secondary">
+                <i class="fas fa-box"></i> Ver Productos
+            </a>
+            <button onclick="registrarMultiples()" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Todo
+            </button>
+        </div>
+    </div>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>Verificación de stock:</strong> El sistema validará que haya suficiente stock antes de registrar cada salida.
+    </div>
+    
+    <div class="salida-container">
+        <div class="salida-form-container">
+            <div class="form-card">
+                <h3><i class="fas fa-minus-circle"></i> Nueva Salida</h3>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-search"></i> Buscar Producto</h4>
+                    <div class="search-product">
+                        <div class="search-input-group">
+                            <input type="text" id="buscarProducto" 
+                                   placeholder="Ingresa código o nombre del producto..."
+                                   class="form-control" autofocus>
+                            <button onclick="buscarProducto()" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                        
+                        <div class="scan-option">
+                            <p>o</p>
+                            <button onclick="iniciarEscaneoSalida()" class="btn btn-warning">
+                                <i class="fas fa-camera"></i> Escanear Múltiples Productos
+                            </button>
+                            <small class="help-text">Puedes escanear varios productos seguidos</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="productoSeleccionado" class="hidden">
+                    <!-- Aquí se mostrará el producto seleccionado -->
+                </div>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-edit"></i> Detalles de la Salida</h4>
+                    
+                    <div class="form-group">
+                        <label for="cantidad">
+                            <i class="fas fa-cube"></i> Cantidad *
+                        </label>
+                        <input type="number" id="cantidad" 
+                               min="1" value="1" class="form-control" required>
+                        <small class="help-text" id="infoStock">
+                            Stock disponible: <span id="stockDisponible">0</span>
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="motivo">
+                            <i class="fas fa-comment"></i> Motivo de Salida *
+                        </label>
+                        <select id="motivo" class="form-select">
+                            <option value="Venta">Venta</option>
+                            <option value="Consumo Interno">Consumo Interno</option>
+                            <option value="Dañado">Dañado</option>
+                            <option value="Caducado">Caducado</option>
+                            <option value="Ajuste de Inventario">Ajuste de Inventario</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cliente">
+                            <i class="fas fa-user"></i> Cliente/Destino
+                        </label>
+                        <input type="text" id="cliente" 
+                               placeholder="Nombre del cliente o destino..."
+                               class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notas">
+                            <i class="fas fa-sticky-note"></i> Notas Adicionales
+                        </label>
+                        <textarea id="notas" rows="3" 
+                                  placeholder="Observaciones, número de factura, etc."
+                                  class="form-control"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fecha">
+                            <i class="fas fa-calendar"></i> Fecha de Salida
+                        </label>
+                        <input type="datetime-local" id="fecha" 
+                               class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button onclick="verificarYAgregar()" class="btn btn-warning" id="btnAgregar" disabled>
+                        <i class="fas fa-plus"></i> Agregar a la Lista
+                    </button>
+                    <button onclick="limpiarFormulario()" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="stock-alert hidden" id="stockAlerta">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Atención:</strong> El stock disponible es menor que la cantidad solicitada.
+                        <div id="detalleAlerta"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="salida-lista-container">
+            <div class="lista-card">
+                <div class="lista-header">
+                    <h3><i class="fas fa-list"></i> Salidas Pendientes</h3>
+                    <span class="badge" id="contadorSalidas">0</span>
+                </div>
+                
+                <div class="lista-body" id="listaSalidas">
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list fa-3x"></i>
+                        <p>No hay salidas pendientes</p>
+                        <small>Agrega productos usando el formulario</small>
+                    </div>
+                </div>
+                
+                <div class="lista-footer">
+                    <div class="lista-totales">
+                        <div class="total-item">
+                            <span>Productos:</span>
+                            <strong id="totalProductos">0</strong>
+                        </div>
+                        <div class="total-item">
+                            <span>Unidades:</span>
+                            <strong id="totalUnidades">0</strong>
+                        </div>
+                        <div class="total-item">
+                            <span>Valor Total:</span>
+                            <strong id="totalValor">$0.00</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="lista-actions">
+                        <button onclick="registrarSalidas()" class="btn btn-success" id="btnRegistrar" disabled>
+                            <i class="fas fa-check-circle"></i> Registrar Salidas
+                        </button>
+                        <button onclick="limpiarLista()" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Limpiar Todo
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="historial-card">
+                <h3><i class="fas fa-history"></i> Últimas Salidas</h3>
+                <div class="historial-list" id="historialSalidas">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Cargando historial...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<!-- REEMPLAZAR el modal actual en salida.html con este: -->
+
+<!-- Modal de escaneo múltiple -->
+<div id="modalEscaneo" class="modal hidden">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-camera"></i> Escanear Múltiples Productos</h3>
+            <button onclick="cerrarModalEscaneo()" class="btn-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Contador de productos -->
+            <div class="scan-counter mb-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Modo de escaneo múltiple:</strong> 
+                    Escanea cada producto, ingresa la cantidad y luego presiona "Continuar"
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-primary fs-6">
+                        <i class="fas fa-box"></i> 
+                        Productos: <span id="contadorEscaneados">0</span>
+                    </span>
+                    <button onclick="finalizarEscaneo()" class="btn btn-success" id="btnFinalizarEscaneo" disabled>
+                        <i class="fas fa-check-circle"></i> Terminar (<span id="contadorProductos">0</span>)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Escáner -->
+            <div class="scanner-container" id="scannerSalida" style="height: 300px;">
+                <!-- El escáner se inicializará aquí -->
+            </div>
+            
+            <!-- Área para mostrar producto escaneado -->
+            <div id="areaProductoEscaneado" class="mt-3">
+                <!-- Aquí se mostrará el producto cuando se escanee -->
+            </div>
+            
+            <!-- Lista de productos escaneados -->
+            <div class="mt-3" id="listaEscaneadosContainer">
+                <h5><i class="fas fa-list"></i> Productos Escaneados</h5>
+                <div class="productos-escaneados-container" id="listaEscaneadosModal">
+                    <div class="empty-state-small">
+                        <i class="fas fa-qrcode fa-2x"></i>
+                        <p>Escanea el primer producto</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Entrada manual -->
+            <div class="manual-input mt-3">
+                <div class="input-group">
+                    <input type="text" id="codigoManual" 
+                           placeholder="Ingresa código manualmente..."
+                           class="form-control">
+                    <button onclick="procesarCodigoManual()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button onclick="continuarEscaneando()" class="btn btn-secondary" id="btnContinuar" style="display: none;">
+                <i class="fas fa-plus"></i> Escanear Otro Producto
+            </button>
+            <button onclick="cerrarModalEscaneo()" class="btn btn-outline-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.salida-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.alert-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin: 1rem 0 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.alert-info i {
+    font-size: 1.5rem;
+    margin-top: 0.125rem;
+}
+
+.salida-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 1024px) {
+    .salida-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stock-alert {
+    margin-top: 1.5rem;
+}
+
+.alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.alert-warning i {
+    font-size: 1.5rem;
+    margin-top: 0.125rem;
+}
+
+.alert-warning div {
+    flex: 1;
+}
+
+.help-text {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.help-text span {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+/* Estilos específicos para salida */
+.btn-warning {
+    background: var(--warning);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}
+/* Estilos para el modal de escaneo múltiple */
+.modal-content {
+    max-width: 800px !important;
+}
+
+.scan-counter .alert {
+    margin-bottom: 1rem;
+}
+
+.productos-escaneados-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.producto-escaneado-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+}
+
+.producto-escaneado-item:last-child {
+    margin-bottom: 0;
+}
+
+.producto-escaneado-info {
+    flex: 1;
+}
+
+.producto-escaneado-info strong {
+    display: block;
+    color: #212529;
+}
+
+.producto-escaneado-info small {
+    color: #6c757d;
+    font-size: 0.875em;
+}
+
+.producto-escaneado-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cantidad-badge {
+    background-color: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    min-width: 40px;
+    text-align: center;
+}
+
+.btn-icon-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.btn-icon-sm.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-icon-sm.btn-danger:hover {
+    background-color: #bb2d3b;
+}
+
+.empty-state-small {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.empty-state-small i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #adb5bd;
+}
+
+.modal-cantidad {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.modal-cantidad-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-cantidad-header h5 {
+    margin: 0;
+    color: #212529;
+}
+
+.modal-cantidad-body p {
+    margin-bottom: 1rem;
+}
+
+.modal-cantidad-footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+let scanner = null;
+let salidasPendientes = [];
+let productoSeleccionado = null;
+let productosEscaneadosModal = new Map(); // Almacena productos escaneados en modal
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarHistorialSalidas();
+    
+    // Configurar fecha actual por defecto
+    const now = new Date();
+    const fechaInput = document.getElementById('fecha');
+    fechaInput.value = now.toISOString().slice(0, 16);
+    
+    // Buscar producto al presionar Enter
+    document.getElementById('buscarProducto').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarProducto();
+        }
+    });
+    
+    // Validar cantidad en tiempo real
+    document.getElementById('cantidad').addEventListener('input', function() {
+        if (productoSeleccionado) {
+            verificarStock();
+        }
+    });
+});
+
+// Buscar producto (similar a entrada)
+async function buscarProducto() {
+    const query = document.getElementById('buscarProducto').value.trim();
+    if (!query) {
+        alert('Por favor ingresa un código o nombre para buscar');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(query)}`);
+        const productos = await response.json();
+        
+        if (productos.length === 0) {
+            alert('No se encontró ningún producto');
+            return;
+        }
+        
+        if (productos.length === 1) {
+            seleccionarProducto(productos[0]);
+        } else {
+            mostrarSelectorProductos(productos);
+        }
+        
+    } catch (error) {
+        console.error('Error buscando producto:', error);
+        alert('Error al buscar producto');
+    }
+}
+
+function seleccionarProducto(producto) {
+    productoSeleccionado = producto;
+    
+    const container = document.getElementById('productoSeleccionado');
+    container.innerHTML = `
+        <div class="producto-info">
+            <div class="producto-header">
+                <span class="producto-codigo">${producto.codigo}</span>
+                <button onclick="deseleccionarProducto()" class="btn-icon">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <h3 class="producto-nombre">${producto.nombre}</h3>
+            
+            <div class="producto-detalles">
+                <div class="detalle-item">
+                    <span class="detalle-label">Stock Disponible</span>
+                    <span class="detalle-valor stock-info">${producto.stock_actual}</span>
+                </div>
+                <div class="detalle-item">
+                    <span class="detalle-label">Stock Mínimo</span>
+                    <span class="detalle-valor">${producto.stock_minimo}</span>
+                </div>
+                <div class="detalle-item">
+                    <span class="detalle-label">Precio Unitario</span>
+                    <span class="detalle-valor">$${producto.precio_unitario.toFixed(2)}</span>
+                </div>
+                <div class="detalle-item">
+                    <span class="detalle-label">Valor en Stock</span>
+                    <span class="detalle-valor">$${(producto.stock_actual * producto.precio_unitario).toFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.classList.remove('hidden');
+    
+    // Actualizar información de stock
+    document.getElementById('stockDisponible').textContent = producto.stock_actual;
+    
+    // Verificar stock bajo
+    if (producto.stock_actual <= producto.stock_minimo) {
+        const stockInfo = container.querySelector('.stock-info');
+        stockInfo.style.color = 'var(--warning)';
+        stockInfo.style.fontWeight = 'bold';
+    }
+    
+    if (producto.stock_actual === 0) {
+        const stockInfo = container.querySelector('.stock-info');
+        stockInfo.style.color = 'var(--danger)';
+        stockInfo.innerHTML = `${producto.stock_actual} <i class="fas fa-exclamation-circle"></i>`;
+    }
+    
+    // Habilitar botón y verificar stock
+    document.getElementById('btnAgregar').disabled = false;
+    document.getElementById('buscarProducto').value = '';
+    verificarStock();
+}
+
+function deseleccionarProducto() {
+    productoSeleccionado = null;
+    document.getElementById('productoSeleccionado').classList.add('hidden');
+    document.getElementById('btnAgregar').disabled = true;
+    document.getElementById('stockAlerta').classList.add('hidden');
+}
+
+function mostrarSelectorProductos(productos) {
+    const modal = crearModal(`
+        <h3><i class="fas fa-boxes"></i> Seleccionar Producto</h3>
+        <p>Se encontraron ${productos.length} productos:</p>
+        
+        <div class="productos-lista">
+            ${productos.map(producto => `
+                <div class="producto-opcion" onclick="seleccionarDesdeLista(${producto.id})">
+                    <div class="producto-opcion-info">
+                        <strong>${producto.nombre}</strong>
+                        <small>${producto.codigo} • Stock: ${producto.stock_actual}</small>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="modal-buttons">
+            <button onclick="cerrarModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    `);
+    
+    mostrarModal(modal);
+}
+
+async function seleccionarDesdeLista(productoId) {
+    try {
+        const response = await fetch(`/api/productos/${productoId}`);
+        const producto = await response.json();
+        seleccionarProducto(producto);
+        cerrarModal();
+    } catch (error) {
+        alert('Error al cargar producto');
+    }
+}
+
+// Verificar stock
+function verificarStock() {
+    if (!productoSeleccionado) return;
+    
+    const cantidad = parseInt(document.getElementById('cantidad').value) || 0;
+    const stockDisponible = productoSeleccionado.stock_actual;
+    const alerta = document.getElementById('stockAlerta');
+    const detalleAlerta = document.getElementById('detalleAlerta');
+    
+    if (cantidad > stockDisponible) {
+        // Stock insuficiente
+        detalleAlerta.innerHTML = `
+            <p>Solicitaste: <strong>${cantidad} unidades</strong></p>
+            <p>Stock disponible: <strong>${stockDisponible} unidades</strong></p>
+            <p class="text-danger">Faltan: <strong>${cantidad - stockDisponible} unidades</strong></p>
+        `;
+        alerta.classList.remove('hidden');
+        document.getElementById('btnAgregar').disabled = true;
+    } else if (cantidad > stockDisponible * 0.8) {
+        // Stock crítico (más del 80% del stock)
+        detalleAlerta.innerHTML = `
+            <p>Solicitaste: <strong>${cantidad} unidades</strong></p>
+            <p>Stock disponible: <strong>${stockDisponible} unidades</strong></p>
+            <p class="text-warning">Quedarán solo <strong>${stockDisponible - cantidad} unidades</strong></p>
+        `;
+        alerta.classList.remove('hidden');
+        document.getElementById('btnAgregar').disabled = false;
+    } else {
+        // Stock suficiente
+        alerta.classList.add('hidden');
+        document.getElementById('btnAgregar').disabled = false;
+    }
+}
+
+// 🆕 FUNCIÓN MODIFICADA PARA ESCANEO MÚLTIPLE
+function iniciarEscaneoSalida() {
+    const modal = document.getElementById('modalEscaneo');
+    modal.classList.remove('hidden');
+    
+    // Limpiar lista anterior
+    productosEscaneadosModal.clear();
+    actualizarContadoresModal();
+    actualizarListaEscaneadosModal();
+    
+    // Mostrar lista vacía
+    document.getElementById('listaEscaneadosModal').innerHTML = `
+        <div class="empty-state-small">
+            <i class="fas fa-qrcode fa-2x"></i>
+            <p>Escanea el primer producto</p>
+        </div>
+    `;
+    
+    // Inicializar escáner después de mostrar el modal
+    setTimeout(() => {
+        if (!scanner) {
+            scanner = new QRScanner({
+                elementId: 'scannerSalida',
+                onScan: procesarCodigoEscaneadoMultiple, // 🆕 Cambiado a función nueva
+                onError: (error) => {
+                    console.error('Error del escáner:', error);
+                    mostrarErrorEnModal('Error al acceder a la cámara');
+                }
+            });
+        }
+        
+        scanner.start();
+        document.getElementById('btnContinuar').style.display = 'none';
+    }, 100);
+}
+
+function cerrarModalEscaneo() {
+    if (scanner) {
+        scanner.stop();
+    }
+    
+    const modal = document.getElementById('modalEscaneo');
+    modal.classList.add('hidden');
+    document.getElementById('codigoManual').value = '';
+}
+
+async function procesarCodigoEscaneado(resultado) {
+    if (resultado.valid) {
+        try {
+            const response = await fetch(`/api/productos/codigo/${resultado.code}`);
+            const producto = await response.json();
+            
+            seleccionarProducto(producto);
+            cerrarModalEscaneo();
+            document.getElementById('cantidad').focus();
+            
+        } catch (error) {
+            alert(`Producto no encontrado: ${resultado.code}`);
+        }
+    }
+}
+// 🆕 AGREGAR ESTA NUEVA FUNCIÓN DESPUÉS DE procesarCodigoEscaneado
+async function procesarCodigoEscaneadoMultiple(resultado) {
+    if (!resultado.valid) return;
+    
+    try {
+        const response = await fetch(`/api/productos/codigo/${resultado.code}`);
+        const producto = await response.json();
+        
+        // Verificar si ya fue escaneado
+        if (productosEscaneadosModal.has(producto.id)) {
+            mostrarErrorEnModal(`${producto.nombre} ya está en la lista`);
+            return;
+        }
+        
+        // Preguntar cantidad
+        preguntarCantidad(producto);
+        
+    } catch (error) {
+        mostrarErrorEnModal(`Producto no encontrado: ${resultado.code}`);
+    }
+}
+function procesarCodigoManual() {
+    const codigo = document.getElementById('codigoManual').value.trim();
+    if (!codigo) {
+        mostrarErrorEnModal('Por favor ingresa un código');
+        return;
+    }
+    
+    // 🆕 Usar la nueva función para múltiples
+    procesarCodigoEscaneadoMultiple({
+        code: codigo,
+        valid: true,
+        type: 'manual'
+    });
+    
+    // Limpiar input
+    document.getElementById('codigoManual').value = '';
+}
+
+// Manejo de salidas
+function verificarYAgregar() {
+    if (!productoSeleccionado) {
+        alert('Por favor selecciona un producto primero');
+        return;
+    }
+    
+    const cantidad = parseInt(document.getElementById('cantidad').value);
+    const stockDisponible = productoSeleccionado.stock_actual;
+    
+    if (cantidad <= 0) {
+        alert('La cantidad debe ser mayor a 0');
+        return;
+    }
+    
+    if (cantidad > stockDisponible) {
+        alert(`Stock insuficiente. Disponible: ${stockDisponible}, Solicitado: ${cantidad}`);
+        return;
+    }
+    
+    agregarALista();
+}
+
+function agregarALista() {
+    const cantidad = parseInt(document.getElementById('cantidad').value);
+    const motivo = document.getElementById('motivo').value;
+    const cliente = document.getElementById('cliente').value;
+    const notas = document.getElementById('notas').value;
+    const fecha = document.getElementById('fecha').value;
+    
+    // Crear salida
+    const salida = {
+        id: Date.now(), // ID temporal
+        producto: productoSeleccionado,
+        producto_id: productoSeleccionado.id,
+        cantidad: cantidad,
+        motivo: motivo,
+        cliente: cliente,
+        notas: notas,
+        fecha: fecha || new Date().toISOString(),
+        valor_total: cantidad * productoSeleccionado.precio_unitario,
+        stock_restante: productoSeleccionado.stock_actual - cantidad
+    };
+    
+    // Agregar a la lista
+    salidasPendientes.push(salida);
+    
+    // Actualizar interfaz
+    actualizarListaSalidas();
+    limpiarFormulario();
+    
+    // Mostrar confirmación
+    mostrarExito(`${cantidad} unidades de "${productoSeleccionado.nombre}" agregadas a la lista`);
+}
+
+function limpiarFormulario() {
+    deseleccionarProducto();
+    document.getElementById('cantidad').value = 1;
+    document.getElementById('cliente').value = '';
+    document.getElementById('notas').value = '';
+    document.getElementById('fecha').value = new Date().toISOString().slice(0, 16);
+    document.getElementById('stockAlerta').classList.add('hidden');
+    document.getElementById('buscarProducto').focus();
+}
+
+function actualizarListaSalidas() {
+    const lista = document.getElementById('listaSalidas');
+    const contador = document.getElementById('contadorSalidas');
+    const btnRegistrar = document.getElementById('btnRegistrar');
+    
+    contador.textContent = salidasPendientes.length;
+    btnRegistrar.disabled = salidasPendientes.length === 0;
+    
+    if (salidasPendientes.length === 0) {
+        lista.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list fa-3x"></i>
+                <p>No hay salidas pendientes</p>
+                <small>Agrega productos usando el formulario</small>
+            </div>
+        `;
+    } else {
+        let html = '';
+        
+        salidasPendientes.forEach((salida, index) => {
+            const stockClass = salida.stock_restante <= salida.producto.stock_minimo ? 'warning' : '';
+            
+            html += `
+                <div class="entrada-item">
+                    <div class="entrada-info">
+                        <div class="entrada-producto">${salida.producto.nombre}</div>
+                        <div class="entrada-detalles">
+                            ${salida.motivo} • ${salida.cliente ? 'Cliente: ' + salida.cliente : ''} • Stock restante: 
+                            <span class="${stockClass}">${salida.stock_restante}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="entrada-cantidad">-${salida.cantidad}</div>
+                    
+                    <div class="entrada-acciones">
+                        <button class="btn-icon" onclick="eliminarSalida(${index})" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        lista.innerHTML = html;
+    }
+    
+    // Actualizar totales
+    actualizarTotales();
+}
+
+function eliminarSalida(index) {
+    const salida = salidasPendientes[index];
+    if (confirm(`¿Eliminar salida de ${salida.cantidad} unidades de "${salida.producto.nombre}"?`)) {
+        salidasPendientes.splice(index, 1);
+        actualizarListaSalidas();
+    }
+}
+
+function actualizarTotales() {
+    const totalProductos = salidasPendientes.length;
+    const totalUnidades = salidasPendientes.reduce((sum, s) => sum + s.cantidad, 0);
+    const totalValor = salidasPendientes.reduce((sum, s) => sum + s.valor_total, 0);
+    
+    document.getElementById('totalProductos').textContent = totalProductos;
+    document.getElementById('totalUnidades').textContent = totalUnidades;
+    document.getElementById('totalValor').textContent = `$${totalValor.toFixed(2)}`;
+}
+
+function limpiarLista() {
+    if (salidasPendientes.length === 0) return;
+    
+    if (confirm(`¿Eliminar todas las ${salidasPendientes.length} salidas pendientes?`)) {
+        salidasPendientes = [];
+        actualizarListaSalidas();
+    }
+}
+
+// Registrar salidas
+async function registrarSalidas() {
+    if (salidasPendientes.length === 0) return;
+    
+    // Verificar stock nuevamente antes de registrar
+    const erroresStock = [];
+    
+    for (const salida of salidasPendientes) {
+        try {
+            // Obtener stock actual
+            const response = await fetch(`/api/productos/${salida.producto_id}`);
+            const producto = await response.json();
+            
+            if (producto.stock_actual < salida.cantidad) {
+                erroresStock.push({
+                    producto: salida.producto.nombre,
+                    solicitado: salida.cantidad,
+                    disponible: producto.stock_actual
+                });
+            }
+        } catch (error) {
+            console.error('Error verificando stock:', error);
+        }
+    }
+    
+    if (erroresStock.length > 0) {
+        let mensaje = 'Stock insuficiente para los siguientes productos:\n\n';
+        erroresStock.forEach(e => {
+            mensaje += `• ${e.producto}: Solicitado ${e.solicitado}, Disponible ${e.disponible}\n`;
+        });
+        alert(mensaje);
+        return;
+    }
+    
+    const confirmar = confirm(`¿Registrar ${salidasPendientes.length} salida(s) con un total de ${salidasPendientes.reduce((s, e) => s + e.cantidad, 0)} unidades?`);
+    
+    if (!confirmar) return;
+    
+    try {
+        const resultados = [];
+        
+        for (const salida of salidasPendientes) {
+            const movimiento = {
+                producto_id: salida.producto_id,
+                tipo: 'salida',
+                cantidad: salida.cantidad,
+                motivo: salida.motivo,
+                notas: salida.notas + (salida.cliente ? ` | Cliente: ${salida.cliente}` : ''),
+                usuario: 'admin'
+            };
+            
+            const response = await fetch('/api/movimientos/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(movimiento)
+            });
+            
+            const resultado = await response.json();
+            resultados.push({
+                producto: salida.producto.nombre,
+                success: response.ok,
+                message: response.ok ? 'Registrado' : resultado.detail
+            });
+        }
+        
+        const exitosas = resultados.filter(r => r.success).length;
+        const fallidas = resultados.filter(r => !r.success);
+        
+        let mensaje = `Se registraron ${exitosas} de ${resultados.length} salidas exitosamente.\n\n`;
+        
+        if (fallidas.length > 0) {
+            mensaje += 'Errores:\n';
+            fallidas.forEach(f => {
+                mensaje += `• ${f.producto}: ${f.message}\n`;
+            });
+        }
+        
+        alert(mensaje);
+        
+        if (exitosas > 0) {
+            salidasPendientes = [];
+            actualizarListaSalidas();
+            cargarHistorialSalidas();
+            mostrarExito('Salidas registradas exitosamente');
+        }
+        
+    } catch (error) {
+        alert(`Error al registrar salidas: ${error.message}`);
+    }
+}
+
+// Historial
+async function cargarHistorialSalidas() {
+    try {
+        const response = await fetch('/api/movimientos/');
+        const movimientos = await response.json();
+        
+        const salidas = movimientos
+            .filter(m => m.tipo === 'salida')
+            .slice(0, 10);
+        
+        const historial = document.getElementById('historialSalidas');
+        
+        if (salidas.length === 0) {
+            historial.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-history fa-2x"></i>
+                    <p>No hay salidas registradas</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        salidas.forEach(movimiento => {
+            const fecha = new Date(movimiento.fecha_movimiento).toLocaleString();
+            const clienteMatch = movimiento.notas?.match(/Cliente:\s*(.+)/);
+            const cliente = clienteMatch ? clienteMatch[1] : '';
+            
+            html += `
+                <div class="historial-item">
+                    <div class="historial-fecha">${fecha}</div>
+                    <div class="historial-info">
+                        <div>
+                            <span class="historial-producto">${movimiento.producto ? movimiento.producto.nombre : 'Producto'}</span>
+                            ${cliente ? `<small>Cliente: ${cliente}</small>` : ''}
+                        </div>
+                        <span class="historial-cantidad danger">-${movimiento.cantidad}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        historial.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error cargando historial:', error);
+        document.getElementById('historialSalidas').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error cargando historial</p>
+            </div>
+        `;
+    }
+}
+
+// Funciones auxiliares (similares a entrada)
+function mostrarExito(mensaje) {
+    const alerta = document.createElement('div');
+    alerta.className = 'alert alert-success';
+    alerta.innerHTML = `<i class="fas fa-check-circle"></i> ${mensaje}`;
+    alerta.style.position = 'fixed';
+    alerta.style.top = '20px';
+    alerta.style.right = '20px';
+    alerta.style.zIndex = '1000';
+    
+    document.body.appendChild(alerta);
+    
+    setTimeout(() => {
+        alerta.remove();
+    }, 3000);
+}
+
+function crearModal(content) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="cerrarModal()"></div>
+        <div class="modal-content">
+            ${content}
+        </div>
+    `;
+    return modal;
+}
+
+function mostrarModal(modal) {
+    document.body.appendChild(modal);
+}
+
+function cerrarModal() {
+    const modal = document.querySelector('.modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function registrarMultiples() {
+    registrarSalidas();
+}
+// 🆕 AGREGAR TODAS ESTAS FUNCIONES NUEVAS AL FINAL DEL SCRIPT
+
+// Función para preguntar cantidad
+function preguntarCantidad(producto) {
+    const modalHTML = `
+        <div class="modal-cantidad">
+            <div class="modal-cantidad-header">
+                <h5><i class="fas fa-cube"></i> ${producto.nombre}</h5>
+                <p class="text-muted">${producto.codigo}</p>
+            </div>
+            
+            <div class="modal-cantidad-body">
+                <p><strong>Stock disponible:</strong> ${producto.stock_actual}</p>
+                
+                <div class="form-group">
+                    <label for="cantidad-${producto.id}">Cantidad a retirar:</label>
+                    <input type="number" 
+                           id="cantidad-${producto.id}" 
+                           class="form-control"
+                           min="1" 
+                           max="${producto.stock_actual}"
+                           value="1"
+                           autofocus>
+                </div>
+            </div>
+            
+            <div class="modal-cantidad-footer">
+                <button onclick="agregarProductoConCantidad(${producto.id})" 
+                        class="btn btn-success">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+                <button onclick="continuarEscaneando()" 
+                        class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('listaEscaneadosModal').innerHTML = modalHTML;
+    document.getElementById('btnContinuar').style.display = 'none';
+}
+
+// Función para agregar producto con cantidad
+async function agregarProductoConCantidad(productoId) {
+    const inputCantidad = document.getElementById(`cantidad-${productoId}`);
+    const cantidad = parseInt(inputCantidad.value) || 1;
+    
+    try {
+        const response = await fetch(`/api/productos/${productoId}`);
+        const producto = await response.json();
+        
+        if (cantidad > producto.stock_actual) {
+            mostrarErrorEnModal(`Stock insuficiente. Disponible: ${producto.stock_actual}`);
+            return;
+        }
+        
+        // Agregar a la lista
+        productosEscaneadosModal.set(producto.id, {
+            ...producto,
+            cantidad_retirar: cantidad
+        });
+        
+        actualizarContadoresModal();
+        actualizarListaEscaneadosModal();
+        
+        // Mostrar mensaje de éxito
+        mostrarExitoEnModal(`Agregado: ${producto.nombre} (${cantidad} unidades)`);
+        
+        // Mostrar botón para continuar
+        document.getElementById('btnContinuar').style.display = 'inline-block';
+        
+    } catch (error) {
+        mostrarErrorEnModal('Error al obtener producto');
+    }
+}
+// 🆕 AGREGAR ESTA FUNCIÓN NUEVA PARA REGISTRAR SALIDA MÚLTIPLE
+async function registrarSalidaMultiple() {
+    if (salidasPendientes.length === 0) {
+        alert('No hay productos para registrar');
+        return;
+    }
+    
+    const destino = prompt('Ingrese el destino o responsable de la salida:');
+    if (!destino || destino.trim() === '') {
+        alert('Debe ingresar un destino o responsable');
+        return;
+    }
+    
+    const razon = document.getElementById('motivo').value;
+    const observaciones = document.getElementById('notas').value;
+    
+    // Preparar datos para la API
+    const productosData = salidasPendientes.map(salida => ({
+        producto_id: salida.producto_id,
+        cantidad: salida.cantidad
+    }));
+    
+    const data = {
+        productos: productosData,
+        destino: destino.trim(),
+        razon: razon,
+        observaciones: observaciones,
+        usuario: 'admin'
+    };
+    
+    try {
+        const response = await fetch('/api/movimientos/salida-multiple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Error al registrar salidas');
+        }
+        
+        const resultado = await response.json();
+        
+        // Mostrar éxito
+        mostrarExito(`¡${resultado.length} productos registrados exitosamente!`);
+        
+        // Limpiar lista
+        salidasPendientes = [];
+        actualizarListaSalidas();
+        
+        // Recargar historial
+        cargarHistorialSalidas();
+        
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+
+// 🆕 MODIFICAR la función registrarSalidas para usar la nueva función
+async function registrarSalidas() {
+    if (salidasPendientes.length === 0) return;
+    
+    const confirmar = confirm(
+        `¿Registrar ${salidasPendientes.length} salida(s) con un total de ` +
+        `${salidasPendientes.reduce((s, e) => s + e.cantidad, 0)} unidades?`
+    );
+    
+    if (!confirmar) return;
+    
+    // 🆕 Usar la nueva función
+    await registrarSalidaMultiple();
+}
+// Actualizar lista en modal
+function actualizarListaEscaneadosModal() {
+    const lista = document.getElementById('listaEscaneadosModal');
+    
+    if (productosEscaneadosModal.size === 0) {
+        lista.innerHTML = `
+            <div class="empty-state-small">
+                <i class="fas fa-qrcode fa-2x"></i>
+                <p>Escanea el primer producto</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="productos-escaneados-lista">';
+    
+    for (const [id, producto] of productosEscaneadosModal) {
+        html += `
+            <div class="producto-escaneado-item">
+                <div class="producto-escaneado-info">
+                    <strong>${producto.nombre}</strong>
+                    <small>${producto.codigo} • Stock: ${producto.stock_actual}</small>
+                </div>
+                <div class="producto-escaneado-cantidad">
+                    <span class="cantidad-badge">${producto.cantidad_retirar}</span>
+                    <button onclick="eliminarProductoEscaneado(${id})" 
+                            class="btn-icon-sm btn-danger">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    lista.innerHTML = html;
+}
+
+// Eliminar producto de la lista
+function eliminarProductoEscaneado(productoId) {
+    if (confirm('¿Eliminar este producto de la lista?')) {
+        productosEscaneadosModal.delete(productoId);
+        actualizarContadoresModal();
+        actualizarListaEscaneadosModal();
+    }
+}
+
+// Actualizar contadores
+function actualizarContadoresModal() {
+    const totalProductos = productosEscaneadosModal.size;
+    const totalUnidades = Array.from(productosEscaneadosModal.values())
+        .reduce((sum, p) => sum + p.cantidad_retirar, 0);
+    
+    document.getElementById('contadorEscaneados').textContent = totalProductos;
+    document.getElementById('contadorProductos').textContent = totalProductos;
+    document.getElementById('btnFinalizarEscaneo').disabled = totalProductos === 0;
+}
+
+// Continuar escaneando
+function continuarEscaneando() {
+    // Limpiar la vista actual
+    document.getElementById('listaEscaneadosModal').innerHTML = `
+        <div class="empty-state-small">
+            <i class="fas fa-qrcode fa-2x"></i>
+            <p>Escanea el siguiente producto</p>
+        </div>
+    `;
+    
+    document.getElementById('btnContinuar').style.display = 'none';
+    
+    // Reactivar el escáner si está detenido
+    if (scanner) {
+        scanner.start();
+    }
+}
+
+// 🆕 MODIFICAR la función finalizarEscaneo (debe estar al final del script)
+function finalizarEscaneo() {
+    if (productosEscaneadosModal.size === 0) {
+        alert('No hay productos escaneados');
+        return;
+    }
+    
+    // Agregar cada producto a la lista principal de salidas
+    for (const [id, producto] of productosEscaneadosModal) {
+        const cantidad = producto.cantidad_retirar;
+        const motivo = document.getElementById('motivo').value;
+        const cliente = document.getElementById('cliente').value;
+        const notas = document.getElementById('notas').value;
+        const fecha = document.getElementById('fecha').value;
+        
+        // Crear salida para lista principal
+        const salida = {
+            id: Date.now() + Math.random(), // ID temporal único
+            producto: producto,
+            producto_id: producto.id,
+            cantidad: cantidad,
+            motivo: motivo,
+            cliente: cliente,
+            notas: notas,
+            fecha: fecha || new Date().toISOString(),
+            valor_total: cantidad * producto.precio_unitario,
+            stock_restante: producto.stock_actual - cantidad
+        };
+        
+        // Agregar a lista principal (si no existe ya)
+        const existe = salidasPendientes.some(s => s.producto_id === producto.id);
+        if (!existe) {
+            salidasPendientes.push(salida);
+        }
+    }
+    
+    // Actualizar interfaz principal
+    actualizarListaSalidas();
+    
+    // Cerrar modal y limpiar
+    cerrarModalEscaneo();
+    productosEscaneadosModal.clear();
+    
+    // Mostrar mensaje
+    const totalProductos = Array.from(productosEscaneadosModal.entries()).length;
+    mostrarExito(`${totalProductos} productos agregados a la lista`);
+}
+    
+    // Actualizar interfaz principal
+    actualizarListaSalidas();
+    
+    // Cerrar modal y limpiar
+    cerrarModalEscaneo();
+    productosEscaneadosModal.clear();
+    
+    // Mostrar mensaje
+    mostrarExito(`${productosEscaneadosModal.size} productos agregados a la lista`);
+
+// Función para mostrar error en modal
+function mostrarErrorEnModal(mensaje) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger alert-dismissible';
+    errorDiv.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i> ${mensaje}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    const modalBody = document.querySelector('.modal-body');
+    modalBody.insertBefore(errorDiv, modalBody.firstChild);
+    
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Función para mostrar éxito en modal
+function mostrarExitoEnModal(mensaje) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'alert alert-success alert-dismissible';
+    successDiv.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${mensaje}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    const modalBody = document.querySelector('.modal-body');
+    modalBody.insertBefore(successDiv, modalBody.firstChild);
+    
+    setTimeout(() => {
+        if (successDiv.parentElement) {
+            successDiv.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

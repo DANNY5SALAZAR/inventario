@@ -1,0 +1,1361 @@
+{% extends "base.html" %}
+
+{% block title %}Movimientos - Inventario QR{% endblock %}
+
+{% block content %}
+<div class="movimientos-page">
+    <div class="page-header">
+        <h1><i class="fas fa-history"></i> Historial de Movimientos</h1>
+        <p class="subtitle">Consulta todos los movimientos de entrada y salida</p>
+        
+        <div class="header-actions">
+            <a href="/entrada" class="btn btn-success">
+                <i class="fas fa-arrow-down"></i> Nueva Entrada
+            </a>
+            <a href="/salida" class="btn btn-warning">
+                <i class="fas fa-arrow-up"></i> Nueva Salida
+            </a>
+            <button onclick="generarReporte()" class="btn btn-info">
+                <i class="fas fa-file-export"></i> Exportar
+            </button>
+        </div>
+    </div>
+    
+    <div class="filters-section">
+        <div class="filters-card">
+            <h3><i class="fas fa-filter"></i> Filtros</h3>
+            
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="filterTipo">
+                        <i class="fas fa-exchange-alt"></i> Tipo de Movimiento
+                    </label>
+                    <select id="filterTipo" class="form-select" onchange="filtrarMovimientos()">
+                        <option value="">Todos los tipos</option>
+                        <option value="entrada">Entradas</option>
+                        <option value="salida">Salidas</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filterProducto">
+                        <i class="fas fa-box"></i> Producto
+                    </label>
+                    <select id="filterProducto" class="form-select" onchange="filtrarMovimientos()">
+                        <option value="">Todos los productos</option>
+                        <!-- Se cargarán dinámicamente -->
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filterFechaDesde">
+                        <i class="fas fa-calendar"></i> Desde
+                    </label>
+                    <input type="date" id="filterFechaDesde" 
+                           class="form-control" onchange="filtrarMovimientos()">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filterFechaHasta">
+                        <i class="fas fa-calendar"></i> Hasta
+                    </label>
+                    <input type="date" id="filterFechaHasta" 
+                           class="form-control" onchange="filtrarMovimientos()">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filterMotivo">
+                        <i class="fas fa-comment"></i> Motivo
+                    </label>
+                    <select id="filterMotivo" class="form-select" onchange="filtrarMovimientos()">
+                        <option value="">Todos los motivos</option>
+                        <option value="Compra">Compra</option>
+                        <option value="Venta">Venta</option>
+                        <option value="Devolución">Devolución</option>
+                        <option value="Ajuste de Inventario">Ajuste de Inventario</option>
+                        <option value="Producción">Producción</option>
+                        <option value="Consumo Interno">Consumo Interno</option>
+                        <option value="Dañado">Dañado</option>
+                        <option value="Caducado">Caducado</option>
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button onclick="resetFilters()" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Limpiar Filtros
+                </button>
+                <button onclick="aplicarFiltros()" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Aplicar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon entrada">
+                    <i class="fas fa-arrow-down"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalEntradas">0</h3>
+                    <p>Entradas Totales</p>
+                    <small id="totalUnidadesEntrada">0 unidades</small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon salida">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalSalidas">0</h3>
+                    <p>Salidas Totales</p>
+                    <small id="totalUnidadesSalida">0 unidades</small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon balance">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="balanceNeto">0</h3>
+                    <p>Balance Neto</p>
+                    <small id="diferenciaUnidades">+0 unidades</small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon valor">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="valorTotal">$0</h3>
+                    <p>Valor Movido</p>
+                    <small>Total en transacciones</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="movimientos-container">
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-table"></i> Movimientos</h3>
+                <div class="table-info">
+                    Mostrando <span id="movimientosMostrados">0</span> de <span id="movimientosTotales">0</span> movimientos
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="movimientos-table" id="tablaMovimientos">
+                    <thead>
+                        <tr>
+                            <th>
+                                <i class="fas fa-calendar"></i> Fecha
+                            </th>
+                            <th>
+                                <i class="fas fa-box"></i> Producto
+                            </th>
+                            <th>
+                                <i class="fas fa-exchange-alt"></i> Tipo
+                            </th>
+                            <th>
+                                <i class="fas fa-hashtag"></i> Cantidad
+                            </th>
+                            <th>
+                                <i class="fas fa-comment"></i> Motivo
+                            </th>
+                            <th>
+                                <i class="fas fa-user"></i> Usuario
+                            </th>
+                            <th>
+                                <i class="fas fa-calculator"></i> Valor
+                            </th>
+                            <th>
+                                <i class="fas fa-cog"></i> Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaMovimientosBody">
+                        <!-- Los movimientos se cargarán aquí -->
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <div class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p>Cargando movimientos...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="table-footer">
+                <div class="pagination-info">
+                    Mostrando <span id="paginaActual">1</span> de <span id="totalPaginas">1</span>
+                </div>
+                
+                <div class="pagination-controls">
+                    <button onclick="cambiarPagina(-1)" class="btn-pagination" id="btnAnterior" disabled>
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    
+                    <div class="pagination-numbers" id="paginationNumbers">
+                        <!-- Números de página se generarán aquí -->
+                    </div>
+                    
+                    <button onclick="cambiarPagina(1)" class="btn-pagination" id="btnSiguiente" disabled>
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div class="items-per-page">
+                    <label for="itemsPorPagina">Mostrar:</label>
+                    <select id="itemsPorPagina" onchange="cambiarItemsPorPagina()" class="form-select-sm">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="analytics-section">
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3><i class="fas fa-chart-line"></i> Movimientos por Día</h3>
+                <div class="chart-container">
+                    <canvas id="chartMovimientosDia"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3><i class="fas fa-chart-pie"></i> Distribución por Motivo</h3>
+                <div class="chart-container">
+                    <canvas id="chartDistribucionMotivo"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3><i class="fas fa-chart-bar"></i> Top 10 Productos</h3>
+                <div class="chart-container">
+                    <canvas id="chartTopProductos"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3><i class="fas fa-calendar-alt"></i> Actividad por Hora</h3>
+                <div class="chart-container">
+                    <canvas id="chartActividadHora"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para ver detalles -->
+    <div id="modalDetalles" class="modal hidden">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> Detalles del Movimiento</h3>
+                <button onclick="cerrarModalDetalles()" class="btn-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body" id="modalDetallesBody">
+                <!-- Los detalles se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.movimientos-page {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.filters-section {
+    margin: 2rem 0;
+}
+
+.filters-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.filters-card h3 {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--dark);
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gray);
+}
+
+/* Stats Section */
+.stats-section {
+    margin: 2rem 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+.stat-icon.entrada {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.stat-icon.salida {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.stat-icon.balance {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.stat-icon.valor {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+    color: var(--dark);
+}
+
+.stat-content p {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--dark);
+}
+
+.stat-content small {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+/* Table Section */
+.movimientos-container {
+    margin: 2rem 0;
+}
+
+.table-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 1.5rem;
+    background: var(--light);
+    border-bottom: 1px solid var(--gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.table-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-info {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.movimientos-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.movimientos-table thead {
+    background: var(--light);
+}
+
+.movimientos-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark);
+    border-bottom: 2px solid var(--gray);
+    white-space: nowrap;
+}
+
+.movimientos-table th i {
+    margin-right: 0.5rem;
+    color: var(--primary);
+}
+
+.movimientos-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray);
+    vertical-align: middle;
+}
+
+.movimientos-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.movimientos-table tbody tr:hover {
+    background: var(--light);
+}
+
+/* Estilos para tipos de movimiento */
+.tipo-entrada {
+    background: #d1fae5;
+    color: #059669;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tipo-salida {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Cantidades */
+.cantidad-entrada {
+    color: #059669;
+    font-weight: 600;
+}
+
+.cantidad-salida {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Valor */
+.valor-movimiento {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+/* Acciones */
+.acciones-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-accion {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid var(--gray);
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-accion:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.btn-accion.info:hover {
+    background: var(--info);
+    border-color: var(--info);
+}
+
+.btn-accion.warning:hover {
+    background: var(--warning);
+    border-color: var(--warning);
+}
+
+/* Tabla footer */
+.table-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.pagination-info {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-pagination {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--gray);
+    background: white;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.page-number {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--gray);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.page-number:hover {
+    background: var(--gray);
+}
+
+.page-number.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.items-per-page {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-select-sm {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--gray);
+    border-radius: 0.5rem;
+    background: white;
+}
+
+/* Analytics Section */
+.analytics-section {
+    margin: 2rem 0;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.analytics-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.analytics-card h3 {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--dark);
+}
+
+.chart-container {
+    position: relative;
+    height: 250px;
+}
+
+/* Modal */
+.modal-lg {
+    width: 90%;
+    max-width: 800px;
+}
+
+/* Loading states */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--secondary);
+}
+
+.loading i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pagination-controls {
+        justify-content: center;
+    }
+    
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .movimientos-table {
+        font-size: 0.9rem;
+    }
+    
+    .movimientos-table th,
+    .movimientos-table td {
+        padding: 0.5rem;
+    }
+}
+</style>
+
+<script>
+let movimientos = [];
+let movimientosFiltrados = [];
+let productos = [];
+let currentPage = 1;
+let itemsPerPage = 25;
+let totalPages = 1;
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarMovimientos();
+    cargarProductosParaFiltro();
+    configurarFechasPorDefecto();
+    
+    // Inicializar charts
+    inicializarCharts();
+});
+
+// Cargar movimientos
+async function cargarMovimientos() {
+    try {
+        const response = await fetch('/api/movimientos/');
+        movimientos = await response.json();
+        movimientosFiltrados = [...movimientos];
+        
+        actualizarEstadisticas();
+        mostrarMovimientos();
+        actualizarPaginacion();
+        actualizarCharts();
+        
+    } catch (error) {
+        console.error('Error cargando movimientos:', error);
+        mostrarError('Error cargando movimientos');
+    }
+}
+
+// Cargar productos para filtro
+async function cargarProductosParaFiltro() {
+    try {
+        const response = await fetch('/api/productos/');
+        productos = await response.json();
+        
+        const select = document.getElementById('filterProducto');
+        productos.forEach(producto => {
+            const option = document.createElement('option');
+            option.value = producto.id;
+            option.textContent = `${producto.codigo} - ${producto.nombre}`;
+            select.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+    }
+}
+
+// Configurar fechas por defecto (últimos 30 días)
+function configurarFechasPorDefecto() {
+    const hoy = new Date();
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
+    
+    document.getElementById('filterFechaDesde').value = hace30Dias.toISOString().split('T')[0];
+    document.getElementById('filterFechaHasta').value = hoy.toISOString().split('T')[0];
+}
+
+// Filtrar movimientos
+function filtrarMovimientos() {
+    const tipo = document.getElementById('filterTipo').value;
+    const productoId = document.getElementById('filterProducto').value;
+    const fechaDesde = document.getElementById('filterFechaDesde').value;
+    const fechaHasta = document.getElementById('filterFechaHasta').value;
+    const motivo = document.getElementById('filterMotivo').value;
+    
+    movimientosFiltrados = movimientos.filter(movimiento => {
+        // Filtro por tipo
+        if (tipo && movimiento.tipo !== tipo) return false;
+        
+        // Filtro por producto
+        if (productoId && movimiento.producto_id.toString() !== productoId) return false;
+        
+        // Filtro por fecha
+        const fechaMovimiento = new Date(movimiento.fecha_movimiento).toISOString().split('T')[0];
+        if (fechaDesde && fechaMovimiento < fechaDesde) return false;
+        if (fechaHasta && fechaMovimiento > fechaHasta) return false;
+        
+        // Filtro por motivo
+        if (motivo && movimiento.motivo !== motivo) return false;
+        
+        return true;
+    });
+    
+    currentPage = 1;
+    actualizarEstadisticas();
+    mostrarMovimientos();
+    actualizarPaginacion();
+    actualizarCharts();
+}
+
+function aplicarFiltros() {
+    filtrarMovimientos();
+}
+
+function resetFilters() {
+    document.getElementById('filterTipo').value = '';
+    document.getElementById('filterProducto').value = '';
+    document.getElementById('filterMotivo').value = '';
+    configurarFechasPorDefecto();
+    filtrarMovimientos();
+}
+
+// Actualizar estadísticas
+function actualizarEstadisticas() {
+    const entradas = movimientosFiltrados.filter(m => m.tipo === 'entrada');
+    const salidas = movimientosFiltrados.filter(m => m.tipo === 'salida');
+    
+    const totalEntradas = entradas.length;
+    const totalSalidas = salidas.length;
+    const totalUnidadesEntrada = entradas.reduce((sum, m) => sum + m.cantidad, 0);
+    const totalUnidadesSalida = salidas.reduce((sum, m) => sum + m.cantidad, 0);
+    const balanceNeto = totalUnidadesEntrada - totalUnidadesSalida;
+    const valorTotal = movimientosFiltrados.reduce((sum, m) => {
+        const precio = m.producto ? m.producto.precio_unitario : 0;
+        return sum + (m.cantidad * precio);
+    }, 0);
+    
+    document.getElementById('totalEntradas').textContent = totalEntradas;
+    document.getElementById('totalSalidas').textContent = totalSalidas;
+    document.getElementById('totalUnidadesEntrada').textContent = `${totalUnidadesEntrada} unidades`;
+    document.getElementById('totalUnidadesSalida').textContent = `${totalUnidadesSalida} unidades`;
+    document.getElementById('balanceNeto').textContent = balanceNeto;
+    document.getElementById('diferenciaUnidades').textContent = `${balanceNeto >= 0 ? '+' : ''}${balanceNeto} unidades`;
+    document.getElementById('valorTotal').textContent = `$${valorTotal.toFixed(2)}`;
+    
+    // Actualizar colores del balance
+    const balanceElement = document.getElementById('balanceNeto');
+    const diferenciaElement = document.getElementById('diferenciaUnidades');
+    
+    if (balanceNeto > 0) {
+        balanceElement.style.color = '#059669';
+        diferenciaElement.style.color = '#059669';
+    } else if (balanceNeto < 0) {
+        balanceElement.style.color = '#dc2626';
+        diferenciaElement.style.color = '#dc2626';
+    } else {
+        balanceElement.style.color = 'var(--dark)';
+        diferenciaElement.style.color = 'var(--secondary)';
+    }
+}
+
+// Mostrar movimientos en tabla
+function mostrarMovimientos() {
+    const tbody = document.getElementById('tablaMovimientosBody');
+    const movimientosMostrados = document.getElementById('movimientosMostrados');
+    const movimientosTotales = document.getElementById('movimientosTotales');
+    
+    movimientosTotales.textContent = movimientosFiltrados.length;
+    
+    if (movimientosFiltrados.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No se encontraron movimientos</p>
+                        <small>Intenta con otros filtros</small>
+                    </div>
+                </td>
+            </tr>
+        `;
+        movimientosMostrados.textContent = '0';
+        return;
+    }
+    
+    // Calcular índices para paginación
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const movimientosPagina = movimientosFiltrados.slice(startIndex, endIndex);
+    
+    movimientosMostrados.textContent = movimientosPagina.length;
+    
+    let html = '';
+    
+    movimientosPagina.forEach(movimiento => {
+        const fecha = new Date(movimiento.fecha_movimiento).toLocaleString();
+        const tipoClass = movimiento.tipo === 'entrada' ? 'tipo-entrada' : 'tipo-salida';
+        const tipoIcon = movimiento.tipo === 'entrada' ? 'arrow-down' : 'arrow-up';
+        const cantidadClass = movimiento.tipo === 'entrada' ? 'cantidad-entrada' : 'cantidad-salida';
+        const cantidadSign = movimiento.tipo === 'entrada' ? '+' : '-';
+        const productoNombre = movimiento.producto ? movimiento.producto.nombre : 'Producto eliminado';
+        const productoCodigo = movimiento.producto ? movimiento.producto.codigo : 'N/A';
+        const precio = movimiento.producto ? movimiento.producto.precio_unitario : 0;
+        const valor = movimiento.cantidad * precio;
+        
+        html += `
+            <tr>
+                <td>
+                    <div class="fecha-completa">${fecha}</div>
+                    <small class="text-muted">${new Date(movimiento.fecha_movimiento).toLocaleDateString()}</small>
+                </td>
+                <td>
+                    <div class="fw-semibold">${productoNombre}</div>
+                    <small class="text-muted">${productoCodigo}</small>
+                </td>
+                <td>
+                    <span class="${tipoClass}">
+                        <i class="fas fa-${tipoIcon}"></i>
+                        ${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'}
+                    </span>
+                </td>
+                <td class="${cantidadClass}">
+                    ${cantidadSign}${movimiento.cantidad}
+                </td>
+                <td>${movimiento.motivo || '-'}</td>
+                <td>${movimiento.usuario || 'admin'}</td>
+                <td class="valor-movimiento">$${valor.toFixed(2)}</td>
+                <td>
+                    <div class="acciones-cell">
+                        <button class="btn-accion info" onclick="verDetallesMovimiento(${movimiento.id})" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-accion" onclick="editarMovimiento(${movimiento.id})" title="Editar" ${movimiento.producto ? '' : 'disabled'}>
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-accion warning" onclick="revertirMovimiento(${movimiento.id})" title="Revertir" ${movimiento.producto ? '' : 'disabled'}>
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// Actualizar paginación
+function actualizarPaginacion() {
+    totalPages = Math.ceil(movimientosFiltrados.length / itemsPerPage);
+    
+    document.getElementById('paginaActual').textContent = currentPage;
+    document.getElementById('totalPaginas').textContent = totalPages;
+    
+    const btnAnterior = document.getElementById('btnAnterior');
+    const btnSiguiente = document.getElementById('btnSiguiente');
+    const paginationNumbers = document.getElementById('paginationNumbers');
+    
+    btnAnterior.disabled = currentPage === 1;
+    btnSiguiente.disabled = currentPage === totalPages || totalPages === 0;
+    
+    // Generar números de página
+    let html = '';
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Botón para primera página
+    if (startPage > 1) {
+        html += `<span class="page-number" onclick="irAPagina(1)">1</span>`;
+        if (startPage > 2) {
+            html += `<span class="page-number">...</span>`;
+        }
+    }
+    
+    // Números de página
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<span class="page-number ${i === currentPage ? 'active' : ''}" onclick="irAPagina(${i})">${i}</span>`;
+    }
+    
+    // Botón para última página
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<span class="page-number">...</span>`;
+        }
+        html += `<span class="page-number" onclick="irAPagina(${totalPages})">${totalPages}</span>`;
+    }
+    
+    paginationNumbers.innerHTML = html;
+}
+
+// Navegación de paginación
+function cambiarPagina(delta) {
+    const newPage = currentPage + delta;
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        mostrarMovimientos();
+        actualizarPaginacion();
+        // Scroll suave hacia arriba
+        document.querySelector('.movimientos-container').scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function irAPagina(page) {
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        mostrarMovimientos();
+        actualizarPaginacion();
+    }
+}
+
+function cambiarItemsPorPagina() {
+    itemsPerPage = parseInt(document.getElementById('itemsPorPagina').value);
+    currentPage = 1;
+    mostrarMovimientos();
+    actualizarPaginacion();
+}
+
+// Funciones de acciones
+function verDetallesMovimiento(movimientoId) {
+    const movimiento = movimientos.find(m => m.id === movimientoId);
+    if (!movimiento) return;
+    
+    const modalBody = document.getElementById('modalDetallesBody');
+    const fecha = new Date(movimiento.fecha_movimiento).toLocaleString();
+    const tipoClass = movimiento.tipo === 'entrada' ? 'tipo-entrada' : 'tipo-salida';
+    const tipoTexto = movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida';
+    const productoNombre = movimiento.producto ? movimiento.producto.nombre : 'Producto eliminado';
+    const productoCodigo = movimiento.producto ? movimiento.producto.codigo : 'N/A';
+    const precio = movimiento.producto ? movimiento.producto.precio_unitario : 0;
+    const valor = movimiento.cantidad * precio;
+    
+    modalBody.innerHTML = `
+        <div class="detalles-grid">
+            <div class="detalle-item">
+                <label>ID del Movimiento:</label>
+                <span>${movimiento.id}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Fecha y Hora:</label>
+                <span>${fecha}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Tipo:</label>
+                <span class="${tipoClass}">${tipoTexto}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Cantidad:</label>
+                <span class="${movimiento.tipo === 'entrada' ? 'cantidad-entrada' : 'cantidad-salida'}">
+                    ${movimiento.tipo === 'entrada' ? '+' : '-'}${movimiento.cantidad} unidades
+                </span>
+            </div>
+            <div class="detalle-item">
+                <label>Producto:</label>
+                <span>${productoNombre} (${productoCodigo})</span>
+            </div>
+            <div class="detalle-item">
+                <label>Precio Unitario:</label>
+                <span>$${precio.toFixed(2)}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Valor Total:</label>
+                <span class="valor-movimiento">$${valor.toFixed(2)}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Motivo:</label>
+                <span>${movimiento.motivo || 'No especificado'}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Notas:</label>
+                <span>${movimiento.notas || 'No hay notas'}</span>
+            </div>
+            <div class="detalle-item">
+                <label>Usuario:</label>
+                <span>${movimiento.usuario || 'admin'}</span>
+            </div>
+        </div>
+        
+        ${movimiento.producto ? `
+        <div class="producto-info-detalle">
+            <h4><i class="fas fa-box"></i> Información del Producto</h4>
+            <div class="producto-stats">
+                <div class="stat">
+                    <span>Stock Actual:</span>
+                    <strong>${movimiento.producto.stock_actual}</strong>
+                </div>
+                <div class="stat">
+                    <span>Stock Mínimo:</span>
+                    <strong>${movimiento.producto.stock_minimo}</strong>
+                </div>
+                <div class="stat">
+                    <span>Categoría:</span>
+                    <strong>${movimiento.producto.categoria || 'No especificada'}</strong>
+                </div>
+                <div class="stat">
+                    <span>Ubicación:</span>
+                    <strong>${movimiento.producto.ubicacion || 'No especificada'}</strong>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        
+        <div class="modal-actions">
+            <button onclick="cerrarModalDetalles()" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+            ${movimiento.producto ? `
+            <button onclick="editarMovimiento(${movimiento.id})" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </button>
+            <button onclick="revertirMovimiento(${movimiento.id})" class="btn btn-danger">
+                <i class="fas fa-undo"></i> Revertir Movimiento
+            </button>
+            ` : ''}
+        </div>
+    `;
+    
+    // Mostrar modal
+    document.getElementById('modalDetalles').classList.remove('hidden');
+}
+
+function cerrarModalDetalles() {
+    document.getElementById('modalDetalles').classList.add('hidden');
+}
+
+function editarMovimiento(movimientoId) {
+    // Implementar edición de movimiento
+    alert('Funcionalidad de edición en desarrollo');
+}
+
+async function revertirMovimiento(movimientoId) {
+    const movimiento = movimientos.find(m => m.id === movimientoId);
+    if (!movimiento || !movimiento.producto) {
+        alert('No se puede revertir este movimiento');
+        return;
+    }
+    
+    const confirmar = confirm(`¿Revertir ${movimiento.tipo} de ${movimiento.cantidad} unidades de "${movimiento.producto.nombre}"?\n\nEsta acción creará un movimiento contrario.`);
+    
+    if (!confirmar) return;
+    
+    try {
+        const movimientoContrario = {
+            producto_id: movimiento.producto_id,
+            tipo: movimiento.tipo === 'entrada' ? 'salida' : 'entrada',
+            cantidad: movimiento.cantidad,
+            motivo: `Reversión de ${movimiento.tipo} #${movimiento.id}`,
+            notas: `Revertido: ${movimiento.motivo || 'Sin motivo'}`,
+            usuario: 'admin'
+        };
+        
+        const response = await fetch('/api/movimientos/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(movimientoContrario)
+        });
+        
+        if (response.ok) {
+            alert('Movimiento revertido exitosamente');
+            cargarMovimientos(); // Recargar
+            cerrarModalDetalles();
+        } else {
+            const error = await response.json();
+            throw new Error(error.detail || 'Error al revertir movimiento');
+        }
+        
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+
+// Charts
+let chartMovimientosDia = null;
+let chartDistribucionMotivo = null;
+let chartTopProductos = null;
+let chartActividadHora = null;
+
+function inicializarCharts() {
+    const ctx1 = document.getElementById('chartMovimientosDia').getContext('2d');
+    const ctx2 = document.getElementById('chartDistribucionMotivo').getContext('2d');
+    const ctx3 = document.getElementById('chartTopProductos').getContext('2d');
+    const ctx4 = document.getElementById('chartActividadHora').getContext('2d');
+    
+    // Inicializar charts vacíos
+    chartMovimientosDia = new Chart(ctx1, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    
+    chartDistribucionMotivo = new Chart(ctx2, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    
+    chartTopProductos = new Chart(ctx3, {
+        type: 'bar',
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    
+    chartActividadHora = new Chart(ctx4, {
+        type: 'bar',
+        data: { labels: [], datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+function actualizarCharts() {
+    // Chart 1: Movimientos por día (últimos 7 días)
+    const ultimos7Dias = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split('T')[0];
+    }).reverse();
+    
+    const movimientosPorDia = ultimos7Dias.map(fecha => {
+        const count = movimientosFiltrados.filter(m => 
+            new Date(m.fecha_movimiento).toISOString().split('T')[0] === fecha
+        ).length;
+        return count;
+    });
+    
+    chartMovimientosDia.data.labels = ultimos7Dias.map(f => new Date(f).toLocaleDateString());
+    chartMovimientosDia.data.datasets = [{
+        label: 'Movimientos por día',
+        data: movimientosPorDia,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        tension: 0.4
+    }];
+    chartMovimientosDia.update();
+    
+    // Chart 2: Distribución por motivo
+    const motivos = {};
+    movimientosFiltrados.forEach(m => {
+        const motivo = m.motivo || 'Sin motivo';
+        motivos[motivo] = (motivos[motivo] || 0) + 1;
+    });
+    
+    const motivosArray = Object.entries(motivos).sort((a, b) => b[1] - a[1]);
+    const topMotivos = motivosArray.slice(0, 5);
+    
+    chartDistribucionMotivo.data.labels = topMotivos.map(m => m[0]);
+    chartDistribucionMotivo.data.datasets = [{
+        data: topMotivos.map(m => m[1]),
+        backgroundColor: [
+            '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
+        ]
+    }];
+    chartDistribucionMotivo.update();
+    
+    // Chart 3: Top 10 productos por movimiento
+    const productosMovimientos = {};
+    movimientosFiltrados.forEach(m => {
+        if (m.producto) {
+            const key = `${m.producto.codigo} - ${m.producto.nombre}`;
+            productosMovimientos[key] = (productosMovimientos[key] || 0) + m.cantidad;
+        }
+    });
+    
+    const topProductos = Object.entries(productosMovimientos)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+    
+    chartTopProductos.data.labels = topProductos.map(p => p[0].split(' - ')[0]); // Solo código
+    chartTopProductos.data.datasets = [{
+        label: 'Unidades movidas',
+        data: topProductos.map(p => p[1]),
+        backgroundColor: '#10b981'
+    }];
+    chartTopProductos.update();
+    
+    // Chart 4: Actividad por hora
+    const horas = Array.from({ length: 24 }, (_, i) => i);
+    const actividadPorHora = horas.map(hora => {
+        return movimientosFiltrados.filter(m => {
+            const fecha = new Date(m.fecha_movimiento);
+            return fecha.getHours() === hora;
+        }).length;
+    });
+    
+    chartActividadHora.data.labels = horas.map(h => `${h}:00`);
+    chartActividadHora.data.datasets = [{
+        label: 'Movimientos por hora',
+        data: actividadPorHora,
+        backgroundColor: '#f59e0b'
+    }];
+    chartActividadHora.update();
+}
+
+// Funciones auxiliares
+function mostrarError(mensaje) {
+    alert('Error: ' + mensaje);
+}
+
+function generarReporte() {
+    // Implementar generación de reporte
+    alert('Generando reporte de movimientos...');
+    
+    // Crear datos para el reporte
+    const reporte = {
+        fechaGeneracion: new Date().toISOString(),
+        totalMovimientos: movimientosFiltrados.length,
+        estadisticas: {
+            entradas: movimientosFiltrados.filter(m => m.tipo === 'entrada').length,
+            salidas: movimientosFiltrados.filter(m => m.tipo === 'salida').length,
+            productosUnicos: new Set(movimientosFiltrados.map(m => m.producto_id)).size
+        },
+        movimientos: movimientosFiltrados.map(m => ({
+            fecha: m.fecha_movimiento,
+            producto: m.producto ? m.producto.nombre : 'N/A',
+            tipo: m.tipo,
+            cantidad: m.cantidad,
+            motivo: m.motivo,
+            usuario: m.usuario
+        }))
+    };
+    
+    // Crear y descargar archivo JSON
+    const dataStr = JSON.stringify(reporte, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `reporte_movimientos_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+}
+
+// Inicializar cuando se carga Chart.js
+if (typeof Chart !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', inicializarCharts);
+} else {
+    console.warn('Chart.js no está cargado. Los gráficos no funcionarán.');
+}
+</script>
+{% endblock %}
