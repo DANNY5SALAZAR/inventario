@@ -59,7 +59,7 @@ def generar_qr_code(codigo: str, data_extra: Optional[dict] = None) -> str:
         # Datos para el QR
         qr_data = {
             "codigo": codigo,
-            "sistema": "Inventario QR",
+            "sistema": "Inventario FIMLM",
             "timestamp": datetime.now().isoformat(),
             "url": f"/productos/{codigo}"
         }

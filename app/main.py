@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 
 # Crear app
 app = FastAPI(
-    title="Sistema de Inventario QR",
+    title="Sistema de Inventario FIMLM",
     description="Gestión de inventario con códigos QR y escaneo por cámara",
     version="1.0.0",
     lifespan=lifespan
@@ -41,7 +41,7 @@ app.include_router(inventario.router, prefix="/api")
 # ========== RUTAS PARA EL FRONTEND ==========
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "title": "Inventario QR"})
+    return templates.TemplateResponse("index.html", {"request": request, "title": "Inventario FIMLM"})
 
 @app.get("/productos", response_class=HTMLResponse)
 async def pagina_productos(request: Request):
