@@ -67,11 +67,6 @@
             <span id="bajoStock">0</span>
             <small>Bajo stock</small>
         </div>
-        <div class="stat-item success">
-            <i class="fas fa-dollar-sign"></i>
-            <span id="valorTotal">$0</span>
-            <small>Valor total</small>
-        </div>
         <div class="stat-item info">
             <i class="fas fa-cube"></i>
             <span id="stockTotal">0</span>
@@ -454,12 +449,10 @@ async function cargarProductos() {
 function actualizarEstadisticas() {
     const totalProductos = productos.length;
     const bajoStock = productos.filter(p => p.stock_actual < p.stock_minimo).length;
-    const valorTotal = productos.reduce((sum, p) => sum + (p.stock_actual * p.precio_unitario), 0);
     const stockTotal = productos.reduce((sum, p) => sum + p.stock_actual, 0);
     
     document.getElementById('totalProductos').textContent = totalProductos;
     document.getElementById('bajoStock').textContent = bajoStock;
-    document.getElementById('valorTotal').textContent = '$' + valorTotal.toFixed(2);
     document.getElementById('stockTotal').textContent = stockTotal;
 }
 
@@ -559,21 +552,13 @@ function mostrarProductos() {
                     ` : ''}
                     
                     <div class="producto-stats">
-                        <div class="stat">
-                            <div class="stat-label">Precio</div>
-                            <div class="stat-value">$${producto.precio_unitario.toFixed(2)}</div>
-                        </div>
-                        <div class="stat">
+                            <div class="stat">
                             <div class="stat-label">Stock Mín.</div>
                             <div class="stat-value">${producto.stock_minimo}</div>
                         </div>
                         <div class="stat">
                             <div class="stat-label">Ubicación</div>
                             <div class="stat-value">${producto.ubicacion || '-'}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Valor Total</div>
-                            <div class="stat-value">$${(producto.stock_actual * producto.precio_unitario).toFixed(2)}</div>
                         </div>
                     </div>
                 </div>

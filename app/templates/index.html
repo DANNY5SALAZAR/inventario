@@ -38,16 +38,6 @@
                 <p>Bajo Stock</p>
             </div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon success">
-                <i class="fas fa-dollar-sign"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="totalValue">$0</h3>
-                <p>Valor Total</p>
-            </div>
-        </div>
     </div>
     
     <div class="features-grid">
@@ -130,7 +120,7 @@
             // Actualizar estadísticas
             document.getElementById('totalProducts').textContent = data.total_productos;
             document.getElementById('lowStock').textContent = data.productos_bajo_stock;
-            document.getElementById('totalValue').textContent = '$' + data.valor_total_inventario.toFixed(2);
+        
             
             // Actualizar actividad reciente
             const activityList = document.getElementById('activityList');

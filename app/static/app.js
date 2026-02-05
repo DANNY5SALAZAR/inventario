@@ -206,7 +206,20 @@ async function procesarCodigoEscaneado(codigo, tipoOperacion = 'consulta') {
         mostrarOpcionCrearProducto(codigo, tipoOperacion);
     }
 }
-
+async function buscarProductoGlobal(codigoONombre) {
+    try {
+        console.log('Buscando producto:', codigoONombre); // Debug
+        const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(codigoONombre)}`);
+        console.log('Response status:', response.status); // Debug
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error buscando producto:', error);
+        throw error;
+    }
+}
 function mostrarFeedbackEscaneo(codigo) {
     // Crear o actualizar notificación
     let feedback = document.getElementById('scan-feedback');
@@ -657,3 +670,4 @@ window.crearProductoDesdeCodigo = crearProductoDesdeCodigo;
 window.cerrarModal = cerrarModal;
 window.generarQR = generarQR;
 window.generarBarcode = generarBarcode;
+window.buscarProductoGlobal = buscarProductoGlobal;

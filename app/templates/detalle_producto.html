@@ -78,26 +78,6 @@
                         <p>Stock Mínimo</p>
                     </div>
                 </div>
-                
-                <div class="stat-item">
-                    <div class="stat-icon primary">
-                        <i class="fas fa-dollar-sign"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h2>${{ "%.2f"|format(producto.precio_unitario) }}</h2>
-                        <p>Precio Unitario</p>
-                    </div>
-                </div>
-                
-                <div class="stat-item">
-                    <div class="stat-icon success">
-                        <i class="fas fa-calculator"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h2>${{ "%.2f"|format(producto.stock_actual * producto.precio_unitario) }}</h2>
-                        <p>Valor en Stock</p>
-                    </div>
-                </div>
             </div>
             
             {% if producto.stock_actual < producto.stock_minimo %}

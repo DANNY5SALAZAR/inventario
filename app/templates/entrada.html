@@ -70,12 +70,29 @@
                             <option value="Compra">Compra</option>
                             <option value="Devolución">Devolución</option>
                             <option value="Ajuste de Inventario">Ajuste de Inventario</option>
-                            <option value="Producción">Producción</option>
+                            <option value="Donación">Donación</option>
                             <option value="Transferencia">Transferencia</option>
                             <option value="Otro">Otro</option>
                         </select>
                     </div>
-                    
+                 <!-- Proveedor / Donante / Tercero -->
+                     <div class="form-group">
+                        <label for="origen_nombre">Proveedor / Donante / Tercero</label>
+                        <input
+                         type="text"
+                         id="origen_nombre"
+                         name="origen_nombre"
+                         placeholder="Ej: Proveedor o Donante"
+                         required
+                         >
+                    </div>
+                    <div class="form-group">
+                        <label for="ubicacion">
+                            <i class="fas fa-map-marker-alt"></i> Ubicación
+                        </label>
+                    <input type="text" id="ubicacion" name="ubicacion" 
+                           placeholder="Ej: Estante A1, Almacén 3">
+                </div>
                     <div class="form-group">
                         <label for="notas">
                             <i class="fas fa-sticky-note"></i> Notas Adicionales
@@ -131,8 +148,8 @@
                             <strong id="totalUnidades">0</strong>
                         </div>
                         <div class="total-item">
-                            <span>Valor Total:</span>
-                            <strong id="totalValor">$0.00</strong>
+                            <span>Proveedor:</span>
+                            <strong id="proveedorPrincipal">Varios</strong>
                         </div>
                     </div>
                     
@@ -718,14 +735,28 @@ document.addEventListener('DOMContentLoaded', function() {
 // Buscar producto
 async function buscarProducto() {
     const query = document.getElementById('buscarProducto').value.trim();
+    console.log('Query:', query);
+    
     if (!query) {
         alert('Por favor ingresa un código o nombre para buscar');
         return;
     }
     
     try {
-        const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(query)}`);
+        // CORRECTO: Solo una línea de fetch
+        const url = `/api/productos/buscar?q=${encodeURIComponent(query)}`;
+        console.log('URL:', url);
+        
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            console.log('Response not OK:', await response.text());
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const productos = await response.json();
+        console.log('Productos encontrados:', productos);
         
         if (productos.length === 0) {
             alert('No se encontró ningún producto');
@@ -733,16 +764,14 @@ async function buscarProducto() {
         }
         
         if (productos.length === 1) {
-            // Un solo resultado, seleccionarlo automáticamente
             seleccionarProducto(productos[0]);
         } else {
-            // Múltiples resultados, mostrar selector
             mostrarSelectorProductos(productos);
         }
         
     } catch (error) {
-        console.error('Error buscando producto:', error);
-        alert('Error al buscar producto');
+        console.error('Error completo buscando producto:', error);
+        alert(`Error al buscar producto: ${error.message}`);
     }
 }
 
@@ -771,12 +800,12 @@ function seleccionarProducto(producto) {
                     <span class="detalle-valor">${producto.stock_minimo}</span>
                 </div>
                 <div class="detalle-item">
-                    <span class="detalle-label">Precio Unitario</span>
-                    <span class="detalle-valor">$${producto.precio_unitario.toFixed(2)}</span>
+                    <span class="detalle-label">Categoría</span>
+                    <span class="detalle-valor">${producto.categoria || 'Sin categoría'}</span>
                 </div>
                 <div class="detalle-item">
-                    <span class="detalle-label">Ubicación</span>
-                    <span class="detalle-valor">${producto.ubicacion || 'No especificada'}</span>
+                    <span class="detalle-label">Descripción</span>
+                    <span class="detalle-valor">${producto.descripcion || 'Sin descripción'}</span>
                 </div>
             </div>
             
@@ -801,7 +830,6 @@ function seleccionarProducto(producto) {
     document.getElementById('btnAgregar').disabled = false;
     document.getElementById('buscarProducto').value = '';
 }
-
 function deseleccionarProducto() {
     productoSeleccionado = null;
     document.getElementById('productoSeleccionado').classList.add('hidden');
@@ -934,11 +962,19 @@ function agregarALista() {
     
     const cantidad = parseInt(document.getElementById('cantidad').value);
     const motivo = document.getElementById('motivo').value;
+    const origenNombre = document.getElementById('origen_nombre').value;  // NUEVO
+    const ubicacion = document.getElementById('ubicacion').value;  // NUEVO
     const notas = document.getElementById('notas').value;
     const fecha = document.getElementById('fecha').value;
     
+    // Validaciones
     if (cantidad <= 0) {
         alert('La cantidad debe ser mayor a 0');
+        return;
+    }
+    
+    if (!origenNombre.trim()) {
+        alert('Por favor ingresa el proveedor/donante');
         return;
     }
     
@@ -949,9 +985,10 @@ function agregarALista() {
         producto_id: productoSeleccionado.id,
         cantidad: cantidad,
         motivo: motivo,
+        origen_nombre: origenNombre,  // NUEVO
+        ubicacion: ubicacion,  // NUEVO
         notas: notas,
-        fecha: fecha || new Date().toISOString(),
-        valor_total: cantidad * productoSeleccionado.precio_unitario
+        fecha: fecha || new Date().toISOString()
     };
     
     // Agregar a la lista
@@ -998,7 +1035,11 @@ function actualizarListaEntradas() {
                     <div class="entrada-info">
                         <div class="entrada-producto">${entrada.producto.nombre}</div>
                         <div class="entrada-detalles">
-                            ${entrada.motivo} • $${entrada.valor_total.toFixed(2)}
+                            <small>
+                                ${entrada.motivo} | 
+                                ${entrada.origen_nombre} | 
+                                ${entrada.ubicacion || 'Sin ubicación'}
+                            </small>
                         </div>
                     </div>
                     
@@ -1031,20 +1072,34 @@ function eliminarEntrada(index) {
 function actualizarTotales() {
     const totalProductos = entradasPendientes.length;
     const totalUnidades = entradasPendientes.reduce((sum, e) => sum + e.cantidad, 0);
-    const totalValor = entradasPendientes.reduce((sum, e) => sum + e.valor_total, 0);
+    
+    // Obtener proveedor principal (el más frecuente)
+    let proveedorPrincipal = 'Varios';
+    if (entradasPendientes.length > 0) {
+        const proveedores = {};
+        entradasPendientes.forEach(e => {
+            proveedores[e.origen_nombre] = (proveedores[e.origen_nombre] || 0) + 1;
+        });
+        
+        const masFrecuente = Object.entries(proveedores).sort((a, b) => b[1] - a[1])[0];
+        if (masFrecuente && masFrecuente[1] === entradasPendientes.length) {
+            proveedorPrincipal = masFrecuente[0];
+        }
+    }
     
     document.getElementById('totalProductos').textContent = totalProductos;
     document.getElementById('totalUnidades').textContent = totalUnidades;
-    document.getElementById('totalValor').textContent = `$${totalValor.toFixed(2)}`;
+    document.getElementById('proveedorPrincipal').textContent = proveedorPrincipal;
 }
 
-function limpiarLista() {
-    if (entradasPendientes.length === 0) return;
-    
-    if (confirm(`¿Eliminar todas las ${entradasPendientes.length} entradas pendientes?`)) {
-        entradasPendientes = [];
-        actualizarListaEntradas();
-    }
+function limpiarFormulario() {
+    deseleccionarProducto();
+    document.getElementById('cantidad').value = 1;
+    document.getElementById('origen_nombre').value = '';  // NUEVO
+    document.getElementById('ubicacion').value = '';  // NUEVO
+    document.getElementById('notas').value = '';
+    document.getElementById('fecha').value = new Date().toISOString().slice(0, 16);
+    document.getElementById('buscarProducto').focus();
 }
 
 // Registrar entradas
@@ -1065,6 +1120,10 @@ async function registrarEntradas() {
                 tipo: 'entrada',
                 cantidad: entrada.cantidad,
                 motivo: entrada.motivo,
+                tipo_origen: entrada.motivo.toLowerCase().includes('donacion') ? 'donacion' : 
+                            entrada.motivo.toLowerCase().includes('compra') ? 'compra' : 'otro',
+                origen_nombre: entrada.origen_nombre,  // NUEVO
+                ubicacion: entrada.ubicacion,  // NUEVO
                 notas: entrada.notas,
                 usuario: 'admin'
             };

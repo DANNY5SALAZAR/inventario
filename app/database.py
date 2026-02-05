@@ -37,3 +37,18 @@ def init_db():
     """Crear todas las tablas en la base de datos"""
     Base.metadata.create_all(bind=engine)
     print("✅ Base de datos inicializada")
+def init_db():
+    Base.metadata.create_all(bind=engine)
+    
+    # 🆕 Migración para agregar columna si no existe
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    
+    if 'movimientos' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('movimientos')]
+        
+        if 'cliente_destino' not in columns:
+            with engine.connect() as conn:
+                conn.execute(text('ALTER TABLE movimientos ADD COLUMN cliente_destino VARCHAR'))
+                conn.commit()
+                print("Columna cliente_destino agregada a movimientos")

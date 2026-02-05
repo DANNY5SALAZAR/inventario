@@ -77,27 +77,7 @@
                     </select>
                 </div>
                 
-                <div class="form-group">
-                    <label for="ubicacion">
-                        <i class="fas fa-map-marker-alt"></i> Ubicación
-                    </label>
-                    <input type="text" id="ubicacion" name="ubicacion" 
-                           placeholder="Ej: Estante A1, Almacén 3">
-                </div>
             </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="precio_unitario">
-                        <i class="fas fa-dollar-sign"></i> Precio Unitario *
-                    </label>
-                    <div class="input-with-symbol">
-                        <span class="input-symbol">$</span>
-                        <input type="number" id="precio_unitario" name="precio_unitario" 
-                               step="0.01" min="0" value="0" required>
-                    </div>
-                </div>
-                
                 <div class="form-group">
                     <label for="stock_minimo">
                         <i class="fas fa-exclamation-triangle"></i> Stock Mínimo *
@@ -498,7 +478,6 @@ function generarVistaPrevia() {
     const nombre = document.getElementById('nombre').value || 'Nombre del producto';
     const descripcion = document.getElementById('descripcion').value || 'Descripción no proporcionada';
     const categoria = document.getElementById('categoria').value || 'Sin categoría';
-    const precio = parseFloat(document.getElementById('precio_unitario').value) || 0;
     const stockMinimo = parseInt(document.getElementById('stock_minimo').value) || 0;
     const ubicacion = document.getElementById('ubicacion').value || 'Sin ubicación';
     
@@ -520,10 +499,6 @@ function generarVistaPrevia() {
             <p class="preview-descripcion">${descripcion}</p>
             
             <div class="preview-stats">
-                <div class="preview-stat">
-                    <div class="preview-stat-label">Precio Unitario</div>
-                    <div class="preview-stat-value">$${precio.toFixed(2)}</div>
-                </div>
                 <div class="preview-stat">
                     <div class="preview-stat-label">Stock Mínimo</div>
                     <div class="preview-stat-value">${stockMinimo}</div>
@@ -685,9 +660,7 @@ document.getElementById('formCrearProducto').addEventListener('submit', async fu
         nombre: document.getElementById('nombre').value,
         descripcion: document.getElementById('descripcion').value || null,
         categoria: document.getElementById('categoria').value || null,
-        precio_unitario: parseFloat(document.getElementById('precio_unitario').value),
         stock_minimo: parseInt(document.getElementById('stock_minimo').value),
-        ubicacion: document.getElementById('ubicacion').value || null
     };
     
     try {
@@ -720,9 +693,7 @@ function guardarYContinuar() {
         nombre: document.getElementById('nombre').value,
         descripcion: document.getElementById('descripcion').value || null,
         categoria: document.getElementById('categoria').value || null,
-        precio_unitario: parseFloat(document.getElementById('precio_unitario').value),
         stock_minimo: parseInt(document.getElementById('stock_minimo').value),
-        ubicacion: document.getElementById('ubicacion').value || null
     };
     
     fetch('/api/productos/', {
@@ -814,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function() {
     generarVistaPrevia();
     
     // Actualizar vista previa al cambiar campos
-    const campos = ['codigo', 'nombre', 'descripcion', 'categoria', 'precio_unitario', 'stock_minimo', 'ubicacion'];
+    const campos = ['codigo', 'nombre', 'descripcion', 'categoria', 'stock_minimo', 'ubicacion'];
     campos.forEach(campo => {
         document.getElementById(campo).addEventListener('input', generarVistaPrevia);
     });

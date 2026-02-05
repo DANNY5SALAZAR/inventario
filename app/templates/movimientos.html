@@ -15,8 +15,8 @@
             <a href="/salida" class="btn btn-warning">
                 <i class="fas fa-arrow-up"></i> Nueva Salida
             </a>
-            <button onclick="generarReporte()" class="btn btn-info">
-                <i class="fas fa-file-export"></i> Exportar
+            <button onclick="exportarExcel()" class="btn btn-success">
+        <i class="fas fa-file-excel"></i> Exportar 
             </button>
         </div>
     </div>
@@ -70,7 +70,8 @@
                     <select id="filterMotivo" class="form-select" onchange="filtrarMovimientos()">
                         <option value="">Todos los motivos</option>
                         <option value="Compra">Compra</option>
-                        <option value="Venta">Venta</option>
+                        <option value="Donación">Donación</option>
+                        <option value="Entrega de Ayudas">Entrega de Ayudas</option>
                         <option value="Devolución">Devolución</option>
                         <option value="Ajuste de Inventario">Ajuste de Inventario</option>
                         <option value="Producción">Producción</option>
@@ -155,35 +156,22 @@
                 <table class="movimientos-table" id="tablaMovimientos">
                     <thead>
                         <tr>
-                            <th>
-                                <i class="fas fa-calendar"></i> Fecha
-                            </th>
-                            <th>
-                                <i class="fas fa-box"></i> Producto
-                            </th>
-                            <th>
-                                <i class="fas fa-exchange-alt"></i> Tipo
-                            </th>
-                            <th>
-                                <i class="fas fa-hashtag"></i> Cantidad
-                            </th>
-                            <th>
-                                <i class="fas fa-comment"></i> Motivo
-                            </th>
-                            <th>
-                                <i class="fas fa-user"></i> Usuario
-                            </th>
-                            <th>
-                                <i class="fas fa-calculator"></i> Valor
-                            </th>
-                            <th>
-                                <i class="fas fa-cog"></i> Acciones
-                            </th>
-                        </tr>
+                            <tr>
+                               <th><i class="fas fa-calendar"></i> Fecha</th>
+                               <th><i class="fas fa-box"></i> Producto</th>
+                               <th><i class="fas fa-exchange-alt"></i> Tipo</th>
+                               <th><i class="fas fa-cube"></i> Cantidad</th>
+                               <th><i class="fas fa-comment"></i> Motivo</th>
+                               <th><i class="fas fa-user-tag"></i> Proveedor/Cliente</th> <!-- 🆕 Nuevo -->
+                               <th><i class="fas fa-map-marker-alt"></i> Ubicación</th> <!-- 🆕 Nuevo -->
+                               <th><i class="fas fa-sticky-note"></i> Notas</th> <!-- 🆕 Nuevo -->
+                               <th><i class="fas fa-user"></i> Usuario</th>
+                               <th><i class="fas fa-cog"></i> Acciones</th>
+                            </tr>
                     </thead>
                     <tbody id="tablaMovimientosBody">
-                        <!-- Los movimientos se cargarán aquí -->
-                        <tr>
+                          <!-- Los movimientos se cargarán aquí -->
+                    </tbody>
                             <td colspan="8" class="text-center">
                                 <div class="loading">
                                     <i class="fas fa-spinner fa-spin"></i>
@@ -724,6 +712,113 @@
         padding: 0.5rem;
     }
 }
+/* Estilos para la tabla con más columnas */
+.tabla-movimientos {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-movimientos th {
+    background: var(--light);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark);
+    border-bottom: 2px solid var(--gray);
+    white-space: nowrap;
+}
+
+.tabla-movimientos th i {
+    margin-right: 0.5rem;
+    color: var(--secondary);
+}
+
+.tabla-movimientos td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--gray);
+    vertical-align: middle;
+}
+
+/* Estilos para los detalles del movimiento */
+.detalles-movimiento {
+    max-width: 600px;
+}
+
+.detalle-header {
+    padding: 1.5rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    margin-bottom: 1.5rem;
+}
+
+.detalle-header.entrada {
+    background: linear-gradient(135deg, var(--success), #16a34a);
+}
+
+.detalle-header.salida {
+    background: linear-gradient(135deg, var(--warning), #d97706);
+}
+
+.detalle-header h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fecha-detalle {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.detalle-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--gray);
+}
+
+.detalle-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.detalle-section h5 {
+    margin-bottom: 1rem;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detalle-section p {
+    margin-bottom: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.detalle-section p strong {
+    min-width: 150px;
+    color: var(--secondary);
+}
+
+.notas-detalle {
+    background: var(--light);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--gray);
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.5;
+}
+
+.notas-detalle em {
+    color: var(--secondary);
+    font-style: italic;
+}
 </style>
 
 <script>
@@ -874,8 +969,89 @@ function actualizarEstadisticas() {
         diferenciaElement.style.color = 'var(--secondary)';
     }
 }
+function exportarExcel() {
+    // Obtener valores de los filtros REALES (corregir IDs)
+    const fechaInicio = document.getElementById('filterFechaDesde')?.value || '';
+    const fechaFin = document.getElementById('filterFechaHasta')?.value || '';
+    const tipo = document.getElementById('filterTipo')?.value || '';
+    
+    console.log('Filtros para exportar:', { fechaInicio, fechaFin, tipo });
+    
+    // Construir URL correctamente
+    let url = `/api/movimientos/exportar/excel?`;
+    
+    // Usar URLSearchParams para manejar parámetros correctamente
+    const params = new URLSearchParams();
+    
+    if (fechaInicio) {
+        params.append('fecha_inicio', fechaInicio);
+    }
+    
+    if (fechaFin) {
+        params.append('fecha_fin', fechaFin);
+    }
+    
+    if (tipo) {
+        params.append('tipo', tipo);
+    }
+    
+    // Construir URL final
+    const queryString = params.toString();
+    if (queryString) {
+        url += queryString;
+    }
+    
+    console.log('URL de exportación:', url);
+    
+    // Mostrar mensaje de procesamiento
+    mostrarMensajeProcesamiento();
+    
+    // Crear un enlace temporal para la descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = 'movimientos.xlsx'; // Nombre sugerido
+    
+    // Simular clic
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // También abrir en nueva pestaña para verificar
+    window.open(url, '_blank');
+}
 
-// Mostrar movimientos en tabla
+function mostrarMensajeProcesamiento() {
+    // Crear mensaje temporal
+    const mensaje = document.createElement('div');
+    mensaje.id = 'mensaje-exportacion';
+    mensaje.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    mensaje.innerHTML = `
+        <i class="fas fa-spinner fa-spin"></i>
+        Generando archivo Excel...
+    `;
+    
+    document.body.appendChild(mensaje);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        if (mensaje.parentNode) {
+            mensaje.parentNode.removeChild(mensaje);
+        }
+    }, 3000);
+}
 function mostrarMovimientos() {
     const tbody = document.getElementById('tablaMovimientosBody');
     const movimientosMostrados = document.getElementById('movimientosMostrados');
@@ -886,7 +1062,7 @@ function mostrarMovimientos() {
     if (movimientosFiltrados.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center">
+                <td colspan="11" class="text-center"> <!-- Cambiado de 8 a 11 columnas -->
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
                         <p>No se encontraron movimientos</p>
@@ -916,8 +1092,14 @@ function mostrarMovimientos() {
         const cantidadSign = movimiento.tipo === 'entrada' ? '+' : '-';
         const productoNombre = movimiento.producto ? movimiento.producto.nombre : 'Producto eliminado';
         const productoCodigo = movimiento.producto ? movimiento.producto.codigo : 'N/A';
-        const precio = movimiento.producto ? movimiento.producto.precio_unitario : 0;
-        const valor = movimiento.cantidad * precio;
+        
+        // 🆕 Determinar origen/destino según el tipo
+        let origenDestino = '';
+        if (movimiento.tipo === 'entrada') {
+            origenDestino = movimiento.origen_nombre || '-';
+        } else {
+            origenDestino = movimiento.cliente_destino || '-';
+        }
         
         html += `
             <tr>
@@ -939,8 +1121,10 @@ function mostrarMovimientos() {
                     ${cantidadSign}${movimiento.cantidad}
                 </td>
                 <td>${movimiento.motivo || '-'}</td>
+                <td>${origenDestino}</td> <!-- 🆕 Proveedor/Cliente -->
+                <td>${movimiento.ubicacion || '-'}</td> <!-- 🆕 Ubicación -->
+                <td>${movimiento.notas || '-'}</td> <!-- 🆕 Notas -->
                 <td>${movimiento.usuario || 'admin'}</td>
-                <td class="valor-movimiento">$${valor.toFixed(2)}</td>
                 <td>
                     <div class="acciones-cell">
                         <button class="btn-accion info" onclick="verDetallesMovimiento(${movimiento.id})" title="Ver detalles">

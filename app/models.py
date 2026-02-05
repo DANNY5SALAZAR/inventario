@@ -1,4 +1,5 @@
 # app/models.py
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -12,27 +13,32 @@ class Producto(Base):
     nombre = Column(String(200), nullable=False)
     descripcion = Column(Text, nullable=True)
     categoria = Column(String(100), nullable=True)
-    precio_unitario = Column(Float, default=0.0)
+    #precio_unitario = Column(Float, default=0.0)
     stock_minimo = Column(Integer, default=0)
     stock_actual = Column(Integer, default=0)
-    ubicacion = Column(String(100), nullable=True)
+    #ubicacion = Column(String(100), nullable=True)
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
     fecha_actualizacion = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relación con movimientos
     movimientos = relationship("Movimiento", back_populates="producto", cascade="all, delete-orphan")
 
+# app/models.py - Modifica la clase Movimiento
 class Movimiento(Base):
     __tablename__ = "movimientos"
     
     id = Column(Integer, primary_key=True, index=True)
-    producto_id = Column(Integer, ForeignKey("productos.id"), nullable=False)
-    tipo = Column(String(20), nullable=False)  # 'entrada' o 'salida'
+    producto_id = Column(Integer, ForeignKey("productos.id"))
+    tipo = Column(String, nullable=False)  # entrada o salida
     cantidad = Column(Integer, nullable=False)
-    motivo = Column(String(200), nullable=True)
-    notas = Column(Text, nullable=True)
-    usuario = Column(String(100), default="admin")
-    fecha_movimiento = Column(DateTime(timezone=True), server_default=func.now())
+    motivo = Column(String, nullable=True)
+    tipo_origen = Column(String, nullable=True)  # compra, donacion, etc.
+    origen_nombre = Column(String, nullable=True)  # Nombre del proveedor/donante
+    ubicacion = Column(String, nullable=True)
+    notas = Column(String, nullable=True)
+    cliente_destino = Column(String, nullable=True)  # 🆕 Para salidas
+    usuario = Column(String, nullable=False, default="admin")
+    fecha_movimiento = Column(DateTime, default=datetime.utcnow)
     
-    # Relación con producto
-    producto = relationship("Producto", back_populates="movimientos")
+    # Relación
+    producto = relationship("Producto")

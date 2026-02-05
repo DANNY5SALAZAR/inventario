@@ -30,9 +30,17 @@ def buscar_productos(
     """
     Buscar productos por nombre, código o descripción.
     """
+    print(f"=== BUSQUEDA RECIBIDA ===")
+    print(f"Término: {q}")
+    print(f"Tipo: {type(q)}")
+    
     productos = crud.buscar_productos(db, query=q)
+    
+    print(f"Productos encontrados: {len(productos)}")
+    for p in productos:
+        print(f"  - {p.codigo}: {p.nombre}")
+    
     return productos
-
 @router.get("/{producto_id}", response_model=schemas.Producto)
 def leer_producto(producto_id: int, db: Session = Depends(get_db)):
     """
@@ -53,10 +61,9 @@ def leer_producto_por_codigo(codigo: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return db_producto
 
-@router.post("/", response_model=schemas.Producto)
+@router.post("/", response_model=schemas.Producto, status_code=status.HTTP_201_CREATED)
 def crear_producto(
     producto: schemas.ProductoCreate,
-    request: Request,  # Agregar request como parámetro
     db: Session = Depends(get_db)
 ):
     """
@@ -65,23 +72,12 @@ def crear_producto(
     """
     # Verificar si el código ya existe
     if producto.codigo:
-        db_producto = crud.get_producto_por_codigo(db, codigo=producto.codigo)
-        if db_producto:
+        existente = crud.get_producto_por_codigo(db, codigo=producto.codigo)
+        if existente:
             raise HTTPException(status_code=400, detail="El código ya existe")
-    
+
     nuevo_producto = crud.crear_producto(db=db, producto=producto)
-    
-    # Retornar JSON con información para redirección frontend
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={
-            "id": nuevo_producto.id,
-            "codigo": nuevo_producto.codigo,
-            "nombre": nuevo_producto.nombre,
-            "message": "Producto creado exitosamente",
-            "redirect_url": f"/productos"  # Redirigir a lista de productos
-        }
-    )
+    return nuevo_producto
 
 @router.put("/{producto_id}", response_model=schemas.Producto)
 def actualizar_producto(

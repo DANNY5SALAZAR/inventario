@@ -8,9 +8,9 @@ class ProductoBase(BaseModel):
     nombre: str = Field(..., min_length=1, max_length=200)
     descripcion: Optional[str] = None
     categoria: Optional[str] = None
-    precio_unitario: float = Field(ge=0, default=0.0)
+    #precio_unitario: float = Field(ge=0, default=0.0)
     stock_minimo: int = Field(ge=0, default=0)
-    ubicacion: Optional[str] = None
+    #ubicacion: Optional[str] = None
 
 class ProductoCreate(ProductoBase):
     codigo: Optional[str] = None  # Si no se proporciona, se generará
@@ -19,9 +19,9 @@ class ProductoUpdate(BaseModel):
     nombre: Optional[str] = Field(None, min_length=1, max_length=200)
     descripcion: Optional[str] = None
     categoria: Optional[str] = None
-    precio_unitario: Optional[float] = Field(None, ge=0)
+    #precio_unitario: Optional[float] = Field(None, ge=0)
     stock_minimo: Optional[int] = Field(None, ge=0)
-    ubicacion: Optional[str] = None
+    #ubicacion: Optional[str] = None
 
 class Producto(ProductoBase):
     id: int
@@ -34,13 +34,25 @@ class Producto(ProductoBase):
         from_attributes = True
 
 # Esquemas para Movimientos
+# app/schemas.py - Modifica MovimientoBase y MovimientoCreate
 class MovimientoBase(BaseModel):
     producto_id: int
     tipo: str = Field(..., pattern="^(entrada|salida)$")
     cantidad: int = Field(..., gt=0)
     motivo: Optional[str] = None
+    tipo_origen: Optional[str] = Field(
+        None, description="compra, donacion, devolucion, traslado"
+    )
+    origen_nombre: Optional[str] = Field(
+        None, description="Proveedor, donante o tercero"
+    )
+    ubicacion: Optional[str] = None
     notas: Optional[str] = None
     usuario: str = "admin"
+    # 🆕 AGREGAR estos campos para salidas
+    cliente_destino: Optional[str] = Field(
+        None, description="Cliente o destino (para salidas)"
+    )
 
 class MovimientoCreate(MovimientoBase):
     pass

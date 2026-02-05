@@ -45,18 +45,43 @@
                         
                         <div class="scan-option">
                             <p>o</p>
-                            <button onclick="iniciarEscaneoSalida()" class="btn btn-warning">
-                                <i class="fas fa-camera"></i> Escanear Múltiples Productos
+                            <button onclick="iniciarEscaneoSimple()" class="btn btn-warning">
+                                <i class="fas fa-camera"></i> Escanear Producto
                             </button>
                             <small class="help-text">Puedes escanear varios productos seguidos</small>
                         </div>
                     </div>
                 </div>
                 
-                <div id="productoSeleccionado" class="hidden">
-                    <!-- Aquí se mostrará el producto seleccionado -->
-                </div>
-                
+        <!-- PARA MODO NORMAL (producto individual) -->
+    <div id="productoSeleccionado" class="hidden">
+    <!-- Aquí se mostrará el producto seleccionado individualmente -->
+        </div>
+
+<!-- PARA MODO KIT (múltiples productos) -->
+ <div id="productosSeleccionados" class="hidden">
+    <div class="productos-seleccionados-header">
+        <h4><i class="fas fa-boxes"></i> Productos Seleccionados</h4>
+        <span class="badge" id="contadorProductosSeleccionados">0</span>
+    </div>
+    
+    <div class="productos-seleccionados-list" id="listaProductosSeleccionados">
+        <!-- Aquí se mostrarán los productos seleccionados -->
+    </div>
+    
+    <!-- 🆕 CAMBIA style="display: none;" por class="hidden" -->
+    <div class="productos-seleccionados-footer hidden" id="kitOptions">
+        <div class="form-group">
+            <label for="cantidadKits">
+                <i class="fas fa-layer-group"></i> Cantidad de Kits *
+            </label>
+            <input type="number" id="cantidadKits" 
+                   min="1" value="1" class="form-control">
+            <small class="help-text">Cada kit contiene todos los productos listados arriba</small>
+        </div>
+    </div>
+</div>
+           </div>
                 <div class="form-section">
                     <h4><i class="fas fa-edit"></i> Detalles de la Salida</h4>
                     
@@ -75,8 +100,8 @@
                         <label for="motivo">
                             <i class="fas fa-comment"></i> Motivo de Salida *
                         </label>
-                        <select id="motivo" class="form-select">
-                            <option value="Venta">Venta</option>
+                        <select id="motivo" class="form-select"onchange="toggleEntregaAyudas()">
+                            <option value="Entrega de Ayudas">Entrega de Ayudas</option>
                             <option value="Consumo Interno">Consumo Interno</option>
                             <option value="Dañado">Dañado</option>
                             <option value="Caducado">Caducado</option>
@@ -85,7 +110,15 @@
                             <option value="Otro">Otro</option>
                         </select>
                     </div>
-                    
+                    <!-- Después del select de motivo, agrega: -->
+                     <div class="form-group hidden" id="kitNombreGroup">
+                        <label for="kitNombre">
+                            <i class="fas fa-boxes"></i> Nombre del Kit/Mercado *
+                         </label>
+                        <input type="text" id="kitNombre" 
+                               placeholder="Ej: Mercado Básico, Kit Emergencia, Ayuda Familiar"
+                               class="form-control">
+                    </div>
                     <div class="form-group">
                         <label for="cliente">
                             <i class="fas fa-user"></i> Cliente/Destino
@@ -160,8 +193,8 @@
                             <strong id="totalUnidades">0</strong>
                         </div>
                         <div class="total-item">
-                            <span>Valor Total:</span>
-                            <strong id="totalValor">$0.00</strong>
+                            <span>Destino:</span>
+                            <strong id="destinoPrincipal">Varios</strong>
                         </div>
                     </div>
                     
@@ -171,6 +204,9 @@
                         </button>
                         <button onclick="limpiarLista()" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Limpiar Todo
+                        </button>
+                        <button onclick="generarPDF()" class="btn btn-danger" id="btnGenerarPDF" style="display: none;">
+                            <i class="fas fa-file-pdf"></i> Generar Comprobante
                         </button>
                     </div>
                 </div>
@@ -188,7 +224,6 @@
         </div>
     </div>
     
-<!-- REEMPLAZAR el modal actual en salida.html con este: -->
 
 <!-- Modal de escaneo múltiple -->
 <div id="modalEscaneo" class="modal hidden">
@@ -471,6 +506,94 @@
     justify-content: flex-end;
     margin-top: 1rem;
 }
+/* Estilos para productos seleccionados */
+.productos-seleccionados-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--gray);
+}
+
+.productos-seleccionados-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+}
+
+.producto-seleccionado-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--light);
+    border-radius: 0.5rem;
+    border: 1px solid var(--gray);
+}
+
+.producto-seleccionado-info {
+    flex: 1;
+}
+
+.producto-seleccionado-info strong {
+    display: block;
+    color: var(--dark);
+}
+
+.producto-seleccionado-info small {
+    color: var(--secondary);
+}
+
+.producto-seleccionado-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.producto-seleccionado-cantidad input {
+    width: 80px;
+    text-align: center;
+}
+
+.btn-icon-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--gray);
+    background: white;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-icon-sm:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.kit-summary {
+    background: #e8f5e9;
+    border: 1px solid #4caf50;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.kit-summary h5 {
+    color: #2e7d32;
+    margin-bottom: 0.5rem;
+}
+
+.hidden {
+    display: none;
+}
 </style>
 
 <script>
@@ -478,6 +601,8 @@ let scanner = null;
 let salidasPendientes = [];
 let productoSeleccionado = null;
 let productosEscaneadosModal = new Map(); // Almacena productos escaneados en modal
+let productosSeleccionados = []; // Para "Entrega de Ayudas"
+let modoEntregaAyudas = false;
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', function() {
@@ -502,19 +627,36 @@ document.addEventListener('DOMContentLoaded', function() {
             verificarStock();
         }
     });
+    // 🆕 INICIALIZAR MODO ENTREGA DE AYUDAS
+    console.log('Llamando toggleEntregaAyudas()...');
+    toggleEntregaAyudas();
+    console.log('Inicialización completada');
 });
 
 // Buscar producto (similar a entrada)
 async function buscarProducto() {
     const query = document.getElementById('buscarProducto').value.trim();
+    console.log('Buscando:', query); // <-- Agrega esto
+    
     if (!query) {
         alert('Por favor ingresa un código o nombre para buscar');
         return;
     }
     
     try {
-        const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(query)}`);
+        const url = `/api/productos/buscar?q=${encodeURIComponent(query)}`;
+        console.log('URL:', url); // <-- Agrega esto
+        
+        const response = await fetch(url);
+        console.log('Status:', response.status); // <-- Agrega esto
+        
+        if (!response.ok) {
+            console.log('Error response:', await response.text()); // <-- Agrega esto
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const productos = await response.json();
+        console.log('Productos encontrados:', productos); // <-- Agrega esto
         
         if (productos.length === 0) {
             alert('No se encontró ningún producto');
@@ -528,12 +670,22 @@ async function buscarProducto() {
         }
         
     } catch (error) {
-        console.error('Error buscando producto:', error);
-        alert('Error al buscar producto');
+        console.error('Error completo buscando producto:', error);
+        alert(`Error al buscar producto: ${error.message}`);
     }
 }
 
 function seleccionarProducto(producto) {
+    if (modoEntregaAyudas) {
+        // Modo kit: agregar a la lista de productos
+        agregarProductoAKit(producto);
+    } else {
+        // Modo normal: seleccionar un solo producto
+        seleccionarProductoNormal(producto);
+    }
+}
+
+function seleccionarProductoNormal(producto) {
     productoSeleccionado = producto;
     
     const container = document.getElementById('productoSeleccionado');
@@ -558,12 +710,12 @@ function seleccionarProducto(producto) {
                     <span class="detalle-valor">${producto.stock_minimo}</span>
                 </div>
                 <div class="detalle-item">
-                    <span class="detalle-label">Precio Unitario</span>
-                    <span class="detalle-valor">$${producto.precio_unitario.toFixed(2)}</span>
+                    <span class="detalle-label">Categoría</span>
+                    <span class="detalle-valor">${producto.categoria || 'Sin categoría'}</span>
                 </div>
                 <div class="detalle-item">
-                    <span class="detalle-label">Valor en Stock</span>
-                    <span class="detalle-valor">$${(producto.stock_actual * producto.precio_unitario).toFixed(2)}</span>
+                    <span class="detalle-label">Descripción</span>
+                    <span class="detalle-valor">${producto.descripcion || 'Sin descripción'}</span>
                 </div>
             </div>
         </div>
@@ -592,10 +744,158 @@ function seleccionarProducto(producto) {
     document.getElementById('buscarProducto').value = '';
     verificarStock();
 }
+function agregarProductoAKit(producto) {
+    // Verificar si ya está en la lista
+    const existente = productosSeleccionados.find(p => p.id === producto.id);
+    
+    if (existente) {
+        existente.cantidad_kit += 1;
+    } else {
+        productosSeleccionados.push({
+            ...producto,
+            cantidad: 1,
+            cantidad_kit: 1 // Cantidad por kit
+        });
+    }
+    
+    actualizarListaProductosSeleccionados();
+    mostrarContenedorProductos();
+    
+    // 🆕 HABILITAR EL BOTÓN DE AGREGAR Y MOSTRAR CAMPOS DE KIT
+    document.getElementById('btnAgregar').disabled = false;
+    
+    // Si estamos en modo kit, asegurar que los campos estén visibles
+    if (modoEntregaAyudas) {
+        const kitCantidadGroup = document.getElementById('kitCantidadGroup');
+        if (kitCantidadGroup) {
+            kitCantidadGroup.classList.remove('hidden');
+        }
+    }
+}
 
+function actualizarListaProductosSeleccionados() {
+    const lista = document.getElementById('listaProductosSeleccionados');
+    const contador = document.getElementById('contadorProductosSeleccionados');
+    
+    contador.textContent = productosSeleccionados.length;
+    
+    if (productosSeleccionados.length === 0) {
+        lista.innerHTML = `
+            <div class="empty-state-small">
+                <i class="fas fa-box-open"></i>
+                <p>No hay productos seleccionados</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    productosSeleccionados.forEach((producto, index) => {
+        html += `
+            <div class="producto-seleccionado-item">
+                <div class="producto-seleccionado-info">
+                    <strong>${producto.nombre}</strong>
+                    <small>${producto.codigo} • Stock: ${producto.stock_actual}</small>
+                </div>
+                
+                <div class="producto-seleccionado-cantidad">
+                    <input type="number" 
+                           value="${producto.cantidad_kit}" 
+                           min="1" 
+                           max="${producto.stock_actual}"
+                           onchange="actualizarCantidadKit(${index}, this.value)"
+                           class="form-control form-control-sm">
+                    <span>unidades/kit</span>
+                    <button onclick="eliminarProductoKit(${index})" 
+                            class="btn-icon-sm" title="Eliminar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    lista.innerHTML = html;
+}
+
+function mostrarContenedorProductos() {
+    const containerKits = document.getElementById('productosSeleccionados');
+    const containerIndividual = document.getElementById('productoSeleccionado');
+    const kitOptions = document.getElementById('kitOptions'); // 🆕
+    const cantidadKitsField = document.getElementById('cantidadKits'); // 🆕
+    
+    if (modoEntregaAyudas) {
+        // Mostrar contenedor de kits, ocultar individual
+        if (containerKits) {
+            containerKits.classList.remove('hidden');
+            containerKits.style.display = 'block';
+        }
+        
+        // 🆕 MOSTRAR opciones de kit
+        if (kitOptions) {
+            kitOptions.classList.remove('hidden');
+        }
+        
+        // 🆕 HABILITAR y enfocar campo de cantidad de kits
+        if (cantidadKitsField) {
+            cantidadKitsField.disabled = false;
+            setTimeout(() => {
+                cantidadKitsField.focus();
+                cantidadKitsField.select();
+            }, 100);
+        }
+        
+        if (containerIndividual) {
+            containerIndividual.classList.add('hidden');
+        }
+        
+        // HABILITAR el botón de agregar
+        document.getElementById('btnAgregar').disabled = false;
+        
+    } else {
+        // Mostrar contenedor individual, ocultar kits
+        if (containerIndividual) {
+            containerIndividual.classList.remove('hidden');
+        }
+        if (containerKits) {
+            containerKits.classList.add('hidden');
+        }
+    }
+}
+
+function actualizarCantidadKit(index, cantidad) {
+    if (productosSeleccionados[index]) {
+        productosSeleccionados[index].cantidad_kit = parseInt(cantidad) || 1;
+    }
+}
+
+function eliminarProductoKit(index) {
+    if (confirm('¿Eliminar este producto del kit?')) {
+        productosSeleccionados.splice(index, 1);
+        actualizarListaProductosSeleccionados();
+        
+        if (productosSeleccionados.length === 0) {
+            const containerKits = document.getElementById('productosSeleccionados');
+            if (containerKits) {
+                containerKits.classList.add('hidden');
+            }
+        }
+    }
+}
 function deseleccionarProducto() {
     productoSeleccionado = null;
-    document.getElementById('productoSeleccionado').classList.add('hidden');
+    
+    // Ocultar ambos contenedores
+    const containerIndividual = document.getElementById('productoSeleccionado');
+    const containerKits = document.getElementById('productosSeleccionados');
+    
+    if (containerIndividual) {
+        containerIndividual.classList.add('hidden');
+    }
+    if (containerKits) {
+        containerKits.classList.add('hidden');
+    }
+    
     document.getElementById('btnAgregar').disabled = true;
     document.getElementById('stockAlerta').classList.add('hidden');
 }
@@ -637,7 +937,67 @@ async function seleccionarDesdeLista(productoId) {
         alert('Error al cargar producto');
     }
 }
-
+function toggleEntregaAyudas() {
+    const motivo = document.getElementById('motivo').value;
+    modoEntregaAyudas = (motivo === 'Entrega de Ayudas');
+    console.log('Modo Entrega de Ayudas:', modoEntregaAyudas);
+    
+    const kitNombreGroup = document.getElementById('kitNombreGroup');
+    const kitOptions = document.getElementById('kitOptions'); // 🆕 Este elemento
+    const cantidadField = document.getElementById('cantidad');
+    const clienteField = document.getElementById('cliente');
+    const cantidadKitsField = document.getElementById('cantidadKits'); // 🆕 Campo específico
+    
+    if (modoEntregaAyudas) {
+        kitNombreGroup.classList.remove('hidden');
+        
+        // 🆕 MOSTRAR las opciones de kit
+        if (kitOptions) {
+            kitOptions.classList.remove('hidden');
+        }
+        
+        cantidadField.disabled = true;
+        cantidadField.value = 1;
+        
+        // 🆕 HABILITAR Y ENFOCAR el campo de cantidad de kits
+        if (cantidadKitsField) {
+            cantidadKitsField.disabled = false;
+            cantidadKitsField.focus();
+            cantidadKitsField.select(); // Seleccionar el texto para editar
+        }
+        
+        clienteField.placeholder = 'Nombre del beneficiario *';
+        clienteField.required = true;
+        
+        // Mostrar contenedor de kits si hay productos seleccionados
+        if (productosSeleccionados.length > 0) {
+            mostrarContenedorProductos();
+        }
+    } else {
+        kitNombreGroup.classList.add('hidden');
+        
+        // 🆕 OCULTAR las opciones de kit
+        if (kitOptions) {
+            kitOptions.classList.add('hidden');
+        }
+        
+        cantidadField.disabled = false;
+        
+        // 🆕 DESHABILITAR campo de kits
+        if (cantidadKitsField) {
+            cantidadKitsField.disabled = true;
+        }
+        
+        clienteField.placeholder = 'Nombre del cliente o destino...';
+        clienteField.required = false;
+        
+        // Ocultar contenedor de kits
+        const containerKits = document.getElementById('productosSeleccionados');
+        if (containerKits) {
+            containerKits.classList.add('hidden');
+        }
+    }
+}
 // Verificar stock
 function verificarStock() {
     if (!productoSeleccionado) return;
@@ -677,6 +1037,10 @@ function iniciarEscaneoSalida() {
     const modal = document.getElementById('modalEscaneo');
     modal.classList.remove('hidden');
     
+function iniciarEscaneoSimple() {
+    alert('Función de escaneo simple - Escanea un producto a la vez');
+    // Puedes reutilizar el modal existente pero simplificado
+}    
     // Limpiar lista anterior
     productosEscaneadosModal.clear();
     actualizarContadoresModal();
@@ -774,6 +1138,75 @@ function procesarCodigoManual() {
 
 // Manejo de salidas
 function verificarYAgregar() {
+    console.log('=== verificarYAgregar llamado ===');
+    console.log('modoEntregaAyudas:', modoEntregaAyudas);
+    console.log('productosSeleccionados length:', productosSeleccionados.length);
+    console.log('productoSeleccionado:', productoSeleccionado);
+    
+    const motivo = document.getElementById('motivo').value;
+    console.log('Motivo actual:', motivo);
+    
+    // Determinar modo basado en motivo seleccionado
+    const esKit = (motivo === 'Entrega de Ayudas');
+    
+    if (esKit) {
+        console.log('Modo KIT detectado');
+        
+        if (productosSeleccionados.length === 0) {
+            alert('Por favor selecciona al menos un producto para el kit');
+            return;
+        }
+        
+        const kitNombre = document.getElementById('kitNombre').value.trim();
+        const cantidadKits = parseInt(document.getElementById('cantidadKits').value);
+        const cliente = document.getElementById('cliente').value;
+        
+        console.log('Datos kit:', { kitNombre, cantidadKits, cliente });
+        
+        if (!kitNombre) {
+            alert('Por favor ingresa un nombre para el kit');
+            return;
+        }
+        
+        if (!cliente) {
+            alert('Por favor ingresa el nombre del beneficiario');
+            return;
+        }
+        
+        if (cantidadKits <= 0) {
+            alert('La cantidad de kits debe ser mayor a 0');
+            return;
+        }
+        
+        // Llamar a agregarKitALista directamente
+        agregarKitALista();
+        
+    } else {
+        console.log('Modo NORMAL detectado');
+        
+        if (!productoSeleccionado) {
+            alert('Por favor selecciona un producto primero');
+            return;
+        }
+        
+        const cantidad = parseInt(document.getElementById('cantidad').value);
+        const stockDisponible = productoSeleccionado.stock_actual;
+        
+        if (cantidad <= 0) {
+            alert('La cantidad debe ser mayor a 0');
+            return;
+        }
+        
+        if (cantidad > stockDisponible) {
+            alert(`Stock insuficiente. Disponible: ${stockDisponible}, Solicitado: ${cantidad}`);
+            return;
+        }
+        
+        agregarALista();
+    }
+}
+
+function verificarYAgregarNormal() {
     if (!productoSeleccionado) {
         alert('Por favor selecciona un producto primero');
         return;
@@ -794,7 +1227,6 @@ function verificarYAgregar() {
     
     agregarALista();
 }
-
 function agregarALista() {
     const cantidad = parseInt(document.getElementById('cantidad').value);
     const motivo = document.getElementById('motivo').value;
@@ -802,7 +1234,7 @@ function agregarALista() {
     const notas = document.getElementById('notas').value;
     const fecha = document.getElementById('fecha').value;
     
-    // Crear salida
+    // Crear salida NORMAL (sin precio)
     const salida = {
         id: Date.now(), // ID temporal
         producto: productoSeleccionado,
@@ -812,7 +1244,6 @@ function agregarALista() {
         cliente: cliente,
         notas: notas,
         fecha: fecha || new Date().toISOString(),
-        valor_total: cantidad * productoSeleccionado.precio_unitario,
         stock_restante: productoSeleccionado.stock_actual - cantidad
     };
     
@@ -826,8 +1257,98 @@ function agregarALista() {
     // Mostrar confirmación
     mostrarExito(`${cantidad} unidades de "${productoSeleccionado.nombre}" agregadas a la lista`);
 }
+function agregarKitALista() {
+    console.log('agregarKitALista llamado'); // Debug
+    const kitNombre = document.getElementById('kitNombre').value.trim();
+    const cantidadKits = parseInt(document.getElementById('cantidadKits').value);
+    const motivo = document.getElementById('motivo').value;
+    const cliente = document.getElementById('cliente').value;
+    const notas = document.getElementById('notas').value;
+    const fecha = document.getElementById('fecha').value;
+    
+    console.log('Datos del kit:', { kitNombre, cantidadKits, motivo, cliente }); // Debug
+    
+    // Validaciones
+    if (productosSeleccionados.length === 0) {
+        alert('Por favor selecciona al menos un producto para el kit');
+        return;
+    }
+    
+    if (!kitNombre) {
+        alert('Por favor ingresa un nombre para el kit');
+        return;
+    }
+    
+    if (!cliente) {
+        alert('Por favor ingresa el nombre del beneficiario');
+        return;
+    }
+    
+    if (cantidadKits <= 0) {
+        alert('La cantidad de kits debe ser mayor a 0');
+        return;
+    }
+    
+    // Verificar stock para todos los productos
+    const erroresStock = [];
+    
+    productosSeleccionados.forEach(producto => {
+        const totalNecesario = producto.cantidad_kit * cantidadKits;
+        if (totalNecesario > producto.stock_actual) {
+            erroresStock.push({
+                producto: producto.nombre,
+                necesario: totalNecesario,
+                disponible: producto.stock_actual,
+                porKit: producto.cantidad_kit
+            });
+        }
+    });
+    
+    if (erroresStock.length > 0) {
+        let mensaje = 'Stock insuficiente para el kit:\n\n';
+        erroresStock.forEach(e => {
+            mensaje += `• ${e.producto}: Necesario ${e.porKit} × ${cantidadKits} kits = ${e.necesario} unidades, Disponible: ${e.disponible}\n`;
+        });
+        alert(mensaje);
+        return;
+    }
+    
+    // Crear kit
+    const kit = {
+        id: Date.now(), // ID temporal
+        tipo: 'kit',
+        nombre: kitNombre,
+        cantidad_kits: cantidadKits,
+        motivo: motivo,
+        cliente: cliente,
+        notas: notas,
+        fecha: fecha || new Date().toISOString(),
+        productos: productosSeleccionados.map(p => ({
+            producto_id: p.id,
+            producto_nombre: p.nombre,
+            producto_codigo: p.codigo,
+            cantidad_por_kit: p.cantidad_kit,
+            cantidad_total: p.cantidad_kit * cantidadKits,
+            stock_disponible: p.stock_actual
+        }))
+    };
+    
+    console.log('Kit creado:', kit); // Debug
+    
+    // Agregar a la lista de salidas
+    salidasPendientes.push(kit);
+    
+    // Actualizar interfaz
+    actualizarListaSalidas();
+    limpiarFormularioKit();
+    
+    // Mostrar confirmación
+    const totalProductos = productosSeleccionados.reduce((sum, p) => sum + p.cantidad_kit, 0);
+    mostrarExito(`Kit "${kitNombre}" agregado: ${cantidadKits} kits × ${totalProductos} productos totales`);
+}
 
 function limpiarFormulario() {
+    // Para modo normal
     deseleccionarProducto();
     document.getElementById('cantidad').value = 1;
     document.getElementById('cliente').value = '';
@@ -835,8 +1356,36 @@ function limpiarFormulario() {
     document.getElementById('fecha').value = new Date().toISOString().slice(0, 16);
     document.getElementById('stockAlerta').classList.add('hidden');
     document.getElementById('buscarProducto').focus();
+    
+    // Para modo kit
+    productosSeleccionados = [];
+    document.getElementById('kitNombre').value = '';
+    document.getElementById('cantidadKits').value = 1;
 }
+function limpiarFormularioKit() {
+    productosSeleccionados = [];
+    document.getElementById('kitNombre').value = '';
+    document.getElementById('cantidadKits').value = 1;
+    document.getElementById('cliente').value = '';
+    document.getElementById('notas').value = '';
+    document.getElementById('productosSeleccionados').classList.add('hidden');
+    document.getElementById('buscarProducto').value = '';
+    document.getElementById('buscarProducto').focus();
 
+    // Ocultar contenedor de productos seleccionados
+    const containerKits = document.getElementById('productosSeleccionados');
+    if (containerKits) {
+        containerKits.classList.add('hidden');
+    }
+    
+    document.getElementById('buscarProducto').value = '';
+    document.getElementById('buscarProducto').focus();
+}
+// Agrega esta función para mostrar/ocultar el botón de PDF
+function actualizarBotonPDF() {
+    const btnPDF = document.getElementById('btnGenerarPDF');
+    btnPDF.style.display = salidasPendientes.length > 0 ? 'inline-block' : 'none';
+}
 function actualizarListaSalidas() {
     const lista = document.getElementById('listaSalidas');
     const contador = document.getElementById('contadorSalidas');
@@ -857,52 +1406,182 @@ function actualizarListaSalidas() {
         let html = '';
         
         salidasPendientes.forEach((salida, index) => {
-            const stockClass = salida.stock_restante <= salida.producto.stock_minimo ? 'warning' : '';
-            
-            html += `
-                <div class="entrada-item">
-                    <div class="entrada-info">
-                        <div class="entrada-producto">${salida.producto.nombre}</div>
-                        <div class="entrada-detalles">
-                            ${salida.motivo} • ${salida.cliente ? 'Cliente: ' + salida.cliente : ''} • Stock restante: 
-                            <span class="${stockClass}">${salida.stock_restante}</span>
+            if (salida.tipo === 'kit') {
+                // Mostrar kit (Entrega de Ayudas)
+                const totalUnidadesKit = salida.productos.reduce((sum, p) => 
+                    sum + (p.cantidad_por_kit * salida.cantidad_kits), 0);
+                
+                html += `
+                    <div class="entrada-item kit-item">
+                        <div class="entrada-info">
+                            <div class="entrada-producto">
+                                <i class="fas fa-boxes"></i> ${salida.nombre}
+                            </div>
+                            <div class="entrada-detalles">
+                                <small>
+                                    ${salida.motivo} • Beneficiario: ${salida.cliente || 'No especificado'}
+                                    <br>
+                                    ${salida.cantidad_kits} kits × ${salida.productos.length} productos
+                                    (${totalUnidadesKit} unidades totales)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="entrada-cantidad">${salida.cantidad_kits}</div>
+                        
+                        <div class="entrada-acciones">
+                            <button class="btn-icon" onclick="mostrarDetalleKit(${index})" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon" onclick="eliminarSalida(${index})" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="entrada-cantidad">-${salida.cantidad}</div>
-                    
-                    <div class="entrada-acciones">
-                        <button class="btn-icon" onclick="eliminarSalida(${index})" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                `;
+            } else {
+                // Mostrar salida normal (producto individual)
+                const stockClass = salida.stock_restante <= salida.producto.stock_minimo ? 'warning' : '';
+                
+                html += `
+                    <div class="entrada-item">
+                        <div class="entrada-info">
+                            <div class="entrada-producto">${salida.producto.nombre}</div>
+                            <div class="entrada-detalles">
+                                <small>
+                                    ${salida.motivo} • 
+                                    ${salida.cliente ? 'Destino: ' + salida.cliente : ''} 
+                                    ${salida.cliente ? '• ' : ''}
+                                    Stock restante: 
+                                    <span class="${stockClass}">${salida.stock_restante}</span>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="entrada-cantidad">-${salida.cantidad}</div>
+                        
+                        <div class="entrada-acciones">
+                            <button class="btn-icon" onclick="eliminarSalida(${index})" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         });
         
         lista.innerHTML = html;
     }
     
-    // Actualizar totales
+    // Actualizar totales (sin valor monetario)
     actualizarTotales();
+    actualizarBotonPDF();
+}
+
+function mostrarDetalleKit(index) {
+    const kit = salidasPendientes[index];
+    
+    let detalles = `<h4><i class="fas fa-boxes"></i> ${kit.nombre}</h4>`;
+    detalles += `<p><strong>Tipo:</strong> ${kit.motivo}</p>`;
+    detalles += `<p><strong>Beneficiario:</strong> ${kit.cliente || 'No especificado'}</p>`;
+    detalles += `<p><strong>Cantidad de kits:</strong> ${kit.cantidad_kits}</p>`;
+    
+    if (kit.notas) {
+        detalles += `<p><strong>Notas:</strong> ${kit.notas}</p>`;
+    }
+    
+    detalles += `<hr><h5>Productos en el kit:</h5>`;
+    detalles += `<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">`;
+    detalles += `<tr style="background: #f1f1f1;">
+                    <th style="padding: 8px; text-align: left;">Producto</th>
+                    <th style="padding: 8px; text-align: left;">Código</th>
+                    <th style="padding: 8px; text-align: center;">Unid/Kit</th>
+                    <th style="padding: 8px; text-align: center;">Total</th>
+                 </tr>`;
+    
+    let contador = 0;
+    kit.productos.forEach(p => {
+        const total = p.cantidad_por_kit * kit.cantidad_kits;
+        detalles += `<tr style="${contador % 2 === 0 ? 'background: #f9f9f9;' : ''}">
+                        <td style="padding: 8px;">${p.producto_nombre}</td>
+                        <td style="padding: 8px;">${p.producto_codigo}</td>
+                        <td style="padding: 8px; text-align: center;">${p.cantidad_por_kit}</td>
+                        <td style="padding: 8px; text-align: center;">${total} unidades</td>
+                     </tr>`;
+        contador++;
+    });
+    
+    detalles += `</table>`;
+    
+    // Mostrar en modal
+    const modal = crearModal(detalles);
+    mostrarModal(modal);
 }
 
 function eliminarSalida(index) {
     const salida = salidasPendientes[index];
-    if (confirm(`¿Eliminar salida de ${salida.cantidad} unidades de "${salida.producto.nombre}"?`)) {
+    let mensaje = '';
+    
+    if (salida.tipo === 'kit') {
+        mensaje = `¿Eliminar kit "${salida.nombre}" de ${salida.cantidad_kits} kits?`;
+    } else {
+        mensaje = `¿Eliminar salida de ${salida.cantidad} unidades de "${salida.producto.nombre}"?`;
+    }
+    
+    if (confirm(mensaje)) {
         salidasPendientes.splice(index, 1);
         actualizarListaSalidas();
     }
 }
 
 function actualizarTotales() {
-    const totalProductos = salidasPendientes.length;
-    const totalUnidades = salidasPendientes.reduce((sum, s) => sum + s.cantidad, 0);
-    const totalValor = salidasPendientes.reduce((sum, s) => sum + s.valor_total, 0);
+    const totalSalidas = salidasPendientes.length;
+    let totalUnidades = 0;
+    let totalKits = 0;
+    let destinoPrincipal = 'Varios';
     
-    document.getElementById('totalProductos').textContent = totalProductos;
+    // Calcular totales
+    salidasPendientes.forEach(salida => {
+        if (salida.tipo === 'kit') {
+            totalKits += salida.cantidad_kits;
+            // Sumar unidades de todos los productos del kit
+            salida.productos.forEach(p => {
+                totalUnidades += p.cantidad_total;
+            });
+        } else {
+            totalUnidades += salida.cantidad;
+        }
+    });
+    
+    // Determinar destino principal (para kits, usar beneficiario; para normales, usar cliente)
+    const destinos = {};
+    salidasPendientes.forEach(salida => {
+        let destino = '';
+        if (salida.tipo === 'kit') {
+            destino = salida.cliente || 'Kit sin beneficiario';
+        } else {
+            destino = salida.cliente || 'Sin destino';
+        }
+        
+        destinos[destino] = (destinos[destino] || 0) + 1;
+    });
+    
+    // Encontrar el destino más frecuente
+    if (Object.keys(destinos).length > 0) {
+        const masFrecuente = Object.entries(destinos).sort((a, b) => b[1] - a[1])[0];
+        destinoPrincipal = masFrecuente[0];
+    }
+    
+    // Actualizar UI
+    document.getElementById('totalProductos').textContent = totalSalidas;
     document.getElementById('totalUnidades').textContent = totalUnidades;
-    document.getElementById('totalValor').textContent = `$${totalValor.toFixed(2)}`;
+    document.getElementById('destinoPrincipal').textContent = destinoPrincipal;
+    
+    // Mostrar información adicional si hay kits
+    if (totalKits > 0) {
+        document.getElementById('totalProductos').innerHTML = 
+            `${totalSalidas} <small style="color: var(--secondary);">(${totalKits} kits)</small>`;
+    }
 }
 
 function limpiarLista() {
@@ -948,7 +1627,7 @@ async function registrarSalidas() {
         return;
     }
     
-    const confirmar = confirm(`¿Registrar ${salidasPendientes.length} salida(s) con un total de ${salidasPendientes.reduce((s, e) => s + e.cantidad, 0)} unidades?`);
+    const confirmar = confirm(`¿Registrar ${salidasPendientes.length} salida(s)?`);
     
     if (!confirmar) return;
     
@@ -1004,7 +1683,189 @@ async function registrarSalidas() {
         alert(`Error al registrar salidas: ${error.message}`);
     }
 }
+// Agrega esta nueva función para generar PDF
+async function generarPDF() {
+    if (salidasPendientes.length === 0) {
+        alert('No hay salidas para generar comprobante');
+        return;
+    }
+    
+    // Determinar si es un kit o salidas normales
+    const esKit = salidasPendientes.some(s => s.tipo === 'kit');
+    
+    if (esKit) {
+        generarPDFKit();
+    } else {
+        generarPDFNormal();
+    }
+}
 
+async function generarPDFNormal() {
+    // Pedir información adicional si no está completa
+    let destino = document.getElementById('cliente').value;
+    let razon = document.getElementById('motivo').value;
+    let observaciones = document.getElementById('notas').value;
+    
+    if (!destino) {
+        destino = prompt('Ingrese el destino o responsable de la salida:');
+        if (!destino) {
+            alert('Debe especificar un destino para generar el comprobante');
+            return;
+        }
+    }
+    
+    if (!razon) {
+        razon = 'Salida de inventario';
+    }
+    
+    // Preparar datos para la API
+    const productosData = salidasPendientes.map(salida => ({
+        producto_id: salida.producto_id,
+        cantidad: salida.cantidad
+    }));
+    
+    const data = {
+        productos: productosData,
+        destino: destino.trim(),
+        razon: razon,
+        observaciones: observaciones,
+        usuario: 'admin'
+    };
+    
+    try {
+        // Mostrar mensaje de procesamiento
+        mostrarProcesandoPDF();
+        
+        const response = await fetch('/api/movimientos/generar-pdf-salida', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Error generando PDF');
+        }
+        
+        // Descargar PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        const fecha = new Date().toISOString().split('T')[0];
+        link.download = `comprobante_salida_${destino.replace(/\s+/g, '_')}_${fecha}.pdf`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        // Ocultar mensaje de procesamiento
+        ocultarProcesandoPDF();
+        
+    } catch (error) {
+        ocultarProcesandoPDF();
+        alert(`Error: ${error.message}`);
+    }
+}
+
+async function generarPDFKit() {
+    const kits = salidasPendientes.filter(s => s.tipo === 'kit');
+    
+    if (kits.length === 0) {
+        alert('No hay kits para generar comprobante');
+        return;
+    }
+    
+    // Tomar el primer kit (podrías modificar para múltiples kits)
+    const kit = kits[0];
+    
+    // Preparar datos para la API
+    const productosData = kit.productos.map(producto => ({
+        producto_id: producto.producto_id,
+        cantidad: producto.cantidad_total
+    }));
+    
+    const data = {
+        productos: productosData,
+        destino: kit.cliente,
+        razon: kit.motivo,
+        observaciones: `Kit: ${kit.nombre} | ${kit.notas || ''}`,
+        usuario: 'admin'
+    };
+    
+    try {
+        mostrarProcesandoPDF();
+        
+        const response = await fetch('/api/movimientos/generar-pdf-salida', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Error generando PDF');
+        }
+        
+        // Descargar PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `comprobante_kit_${kit.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        ocultarProcesandoPDF();
+        
+    } catch (error) {
+        ocultarProcesandoPDF();
+        alert(`Error: ${error.message}`);
+    }
+}
+
+function mostrarProcesandoPDF() {
+    const overlay = document.createElement('div');
+    overlay.id = 'pdf-processing-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+            <i class="fas fa-spinner fa-spin fa-2x" style="color: #1a3d7c; margin-bottom: 15px;"></i>
+            <p style="font-weight: bold; margin: 0;">Generando comprobante PDF...</p>
+            <p style="font-size: 0.9em; color: #666;">Por favor espere</p>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function ocultarProcesandoPDF() {
+    const overlay = document.getElementById('pdf-processing-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+}
 // Historial
 async function cargarHistorialSalidas() {
     try {
@@ -1181,116 +2042,180 @@ async function agregarProductoConCantidad(productoId) {
     }
 }
 // 🆕 AGREGAR ESTA FUNCIÓN NUEVA PARA REGISTRAR SALIDA MÚLTIPLE
-async function registrarSalidaMultiple() {
-    if (salidasPendientes.length === 0) {
-        alert('No hay productos para registrar');
-        return;
-    }
+//async function registrarSalidaMultiple() {
+   //if (salidasPendientes.length === 0) {
+      //  alert('No hay productos para registrar');
+       // return;
+   // }
     
-    const destino = prompt('Ingrese el destino o responsable de la salida:');
-    if (!destino || destino.trim() === '') {
-        alert('Debe ingresar un destino o responsable');
-        return;
-    }
+  //  const destino = prompt('Ingrese el destino o responsable de la salida:');
+   // if (!destino || destino.trim() === '') {
+   //     alert('Debe ingresar un destino o responsable');
+       // return;
+   // }
     
-    const razon = document.getElementById('motivo').value;
-    const observaciones = document.getElementById('notas').value;
+   // const razon = document.getElementById('motivo').value;
+  //  const observaciones = document.getElementById('notas').value;
     
     // Preparar datos para la API
-    const productosData = salidasPendientes.map(salida => ({
-        producto_id: salida.producto_id,
-        cantidad: salida.cantidad
-    }));
+    //const productosData = salidasPendientes.map(salida => ({
+       // producto_id: salida.producto_id,
+       // cantidad: salida.cantidad
+   // }));
     
-    const data = {
-        productos: productosData,
-        destino: destino.trim(),
-        razon: razon,
-        observaciones: observaciones,
-        usuario: 'admin'
-    };
+    //const data = {
+       // productos: productosData,
+       // destino: destino.trim(),
+        //razon: razon,
+        //observaciones: observaciones,
+      //  usuario: 'admin'
+    //};
     
-    try {
-        const response = await fetch('/api/movimientos/salida-multiple', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
+    //try {
+        //const response = await fetch('/api/movimientos/salida-multiple', {
+            //method: 'POST',
+            //headers: {
+              //  'Content-Type': 'application/json'
+            //},
+          //  body: JSON.stringify(data)
+        //});
         
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Error al registrar salidas');
-        }
+       // if (!response.ok) {
+           // const error = await response.json();
+          //  throw new Error(error.detail || 'Error al registrar salidas');
+       // }
         
-        const resultado = await response.json();
+       // const resultado = await response.json();
         
         // Mostrar éxito
-        mostrarExito(`¡${resultado.length} productos registrados exitosamente!`);
+       // mostrarExito(`¡${resultado.length} productos registrados exitosamente!`);
         
         // Limpiar lista
-        salidasPendientes = [];
-        actualizarListaSalidas();
+       // salidasPendientes = [];
+       // actualizarListaSalidas();
         
         // Recargar historial
-        cargarHistorialSalidas();
+       // cargarHistorialSalidas();
         
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
-}
+    //} catch (error) {
+       // alert(`Error: ${error.message}`);
+    //}
+//}
 
-// 🆕 MODIFICAR la función registrarSalidas para usar la nueva función
+//* 🆕 MODIFICAR la función registrarSalidas para usar la nueva función
 async function registrarSalidas() {
     if (salidasPendientes.length === 0) return;
     
-    const confirmar = confirm(
-        `¿Registrar ${salidasPendientes.length} salida(s) con un total de ` +
-        `${salidasPendientes.reduce((s, e) => s + e.cantidad, 0)} unidades?`
-    );
+    // Separar kits y salidas normales
+    const kits = salidasPendientes.filter(s => s.tipo === 'kit');
+    const salidasNormales = salidasPendientes.filter(s => !s.tipo || s.tipo !== 'kit');
     
-    if (!confirmar) return;
+    let confirmMessage = `¿Registrar ${salidasPendientes.length} salida(s)?\n`;
     
-    // 🆕 Usar la nueva función
-    await registrarSalidaMultiple();
-}
-// Actualizar lista en modal
-function actualizarListaEscaneadosModal() {
-    const lista = document.getElementById('listaEscaneadosModal');
-    
-    if (productosEscaneadosModal.size === 0) {
-        lista.innerHTML = `
-            <div class="empty-state-small">
-                <i class="fas fa-qrcode fa-2x"></i>
-                <p>Escanea el primer producto</p>
-            </div>
-        `;
-        return;
+    if (kits.length > 0) {
+        const totalUnidadesKits = kits.reduce((sum, kit) => {
+            return sum + kit.productos.reduce((s, p) => s + p.cantidad_total, 0);
+        }, 0);
+        confirmMessage += `• ${kits.length} kit(s) - ${totalUnidadesKits} unidades totales\n`;
     }
     
-    let html = '<div class="productos-escaneados-lista">';
-    
-    for (const [id, producto] of productosEscaneadosModal) {
-        html += `
-            <div class="producto-escaneado-item">
-                <div class="producto-escaneado-info">
-                    <strong>${producto.nombre}</strong>
-                    <small>${producto.codigo} • Stock: ${producto.stock_actual}</small>
-                </div>
-                <div class="producto-escaneado-cantidad">
-                    <span class="cantidad-badge">${producto.cantidad_retirar}</span>
-                    <button onclick="eliminarProductoEscaneado(${id})" 
-                            class="btn-icon-sm btn-danger">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        `;
+    if (salidasNormales.length > 0) {
+        const totalUnidades = salidasNormales.reduce((sum, s) => sum + s.cantidad, 0);
+        confirmMessage += `• ${salidasNormales.length} salida(s) normal(es) - ${totalUnidades} unidades\n`;
     }
     
-    html += '</div>';
-    lista.innerHTML = html;
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+        const resultados = [];
+        
+        // 1. Registrar salidas normales
+        for (const salida of salidasNormales) {
+            const movimiento = {
+                producto_id: salida.producto_id,
+                tipo: 'salida',
+                cantidad: salida.cantidad,
+                motivo: salida.motivo,
+                notas: salida.notas + (salida.cliente ? ` | Cliente: ${salida.cliente}` : ''),
+                cliente_destino: salida.cliente,
+                usuario: 'admin'
+            };
+            
+            const response = await fetch('/api/movimientos/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(movimiento)
+            });
+            
+            const resultado = await response.json();
+            resultados.push({
+                tipo: 'normal',
+                producto: salida.producto.nombre,
+                success: response.ok,
+                message: response.ok ? 'Registrado' : resultado.detail
+            });
+        }
+        
+        // 2. Registrar kits (cada producto del kit como salida individual)
+        for (const kit of kits) {
+            for (const producto of kit.productos) {
+                const movimiento = {
+                    producto_id: producto.producto_id,
+                    tipo: 'salida',
+                    cantidad: producto.cantidad_total,
+                    motivo: kit.motivo,
+                    notas: `Kit: ${kit.nombre} | Beneficiario: ${kit.cliente} | ${producto.cantidad_por_kit} × ${kit.cantidad_kits} kits = ${producto.cantidad_total} unidades | ${kit.notas || ''}`,
+                    cliente_destino: kit.cliente,
+                    usuario: 'admin'
+                };
+                
+                const response = await fetch('/api/movimientos/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(movimiento)
+                });
+                
+                const resultado = await response.json();
+                resultados.push({
+                    tipo: 'kit',
+                    kit: kit.nombre,
+                    producto: producto.producto_nombre,
+                    success: response.ok,
+                    message: response.ok ? 'Registrado' : resultado.detail
+                });
+            }
+        }
+        
+        // Mostrar resultados
+        const exitosas = resultados.filter(r => r.success).length;
+        const fallidas = resultados.filter(r => !r.success);
+        
+        let mensaje = `Se registraron ${exitosas} de ${resultados.length} operaciones exitosamente.\n\n`;
+        
+        if (fallidas.length > 0) {
+            mensaje += 'Errores:\n';
+            fallidas.forEach(f => {
+                if (f.tipo === 'kit') {
+                    mensaje += `• Kit "${f.kit}" - ${f.producto}: ${f.message}\n`;
+                } else {
+                    mensaje += `• ${f.producto}: ${f.message}\n`;
+                }
+            });
+        }
+        
+        alert(mensaje);
+        
+        if (exitosas > 0) {
+            salidasPendientes = [];
+            productosSeleccionados = [];
+            actualizarListaSalidas();
+            cargarHistorialSalidas();
+            mostrarExito('Salidas registradas exitosamente');
+        }
+        
+    } catch (error) {
+        alert(`Error al registrar salidas: ${error.message}`);
+    }
 }
 
 // Eliminar producto de la lista
@@ -1356,7 +2281,6 @@ function finalizarEscaneo() {
             cliente: cliente,
             notas: notas,
             fecha: fecha || new Date().toISOString(),
-            valor_total: cantidad * producto.precio_unitario,
             stock_restante: producto.stock_actual - cantidad
         };
         
