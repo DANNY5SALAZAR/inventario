@@ -594,6 +594,113 @@
 .hidden {
     display: none;
 }
+.historial-item {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem;
+}
+
+.historial-item:last-child {
+    border-bottom: none;
+}
+
+.historial-fecha {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.historial-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.historial-producto {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.historial-cantidad {
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.historial-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.btn-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-pdf-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.btn-pdf-success:hover {
+    background-color: #059669;
+}
+
+.btn-pdf-warning {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.btn-pdf-warning:hover {
+    background-color: #d97706;
+}
+
+.btn-pdf-outline {
+    background-color: white;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+}
+
+.btn-pdf-outline:hover {
+    background-color: #eff6ff;
+}
+
+.pdf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    background-color: #10b981;
+    color: white;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pdf-icon-small {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #dc2626;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
 </style>
 
 <script>
@@ -1866,15 +1973,167 @@ function ocultarProcesandoPDF() {
         overlay.remove();
     }
 }
+// ===== SUBIR PDF FIRMADO =====
+// app/templates/salida.html - Reemplazar la función subirPDFSalida()
+
+async function subirPDFSalida(movimientoId) {
+    // Crear input de archivo
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf';
+    
+    input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validar tipo de archivo
+        if (file.type !== 'application/pdf') {
+            alert('❌ Solo se permiten archivos PDF');
+            return;
+        }
+        
+        // Validar tamaño (máximo 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('❌ El archivo es demasiado grande. Máximo 10MB');
+            return;
+        }
+        
+        // Mostrar confirmación
+        const confirmMessage = `¿Subir PDF firmado para esta salida?\n\n` +
+                              `Archivo: ${file.name}\n` +
+                              `Tamaño: ${(file.size / 1024 / 1024).toFixed(2)}MB\n\n` +
+                              `El PDF quedará asociado permanentemente a esta salida.`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        // Mostrar loader
+        mostrarProcesandoPDF('Subiendo PDF firmado...');
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch(`/api/movimientos/${movimientoId}/subir-pdf`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                mostrarExito('✅ PDF firmado subido exitosamente');
+                
+                // Recargar historial para mostrar el PDF
+                cargarHistorialSalidas();
+                
+                // Si hay un callback de éxito, ejecutarlo
+                if (window.onPDFSubido) {
+                    window.onPDFSubido(movimientoId, result.pdf_url);
+                }
+                
+            } else {
+                throw new Error(result.detail || 'Error al subir PDF');
+            }
+            
+        } catch (error) {
+            alert(`❌ Error: ${error.message}`);
+        } finally {
+            ocultarProcesandoPDF();
+        }
+    };
+    
+    input.click();
+}
+
+/**
+ * Ver PDF en nueva pestaña
+ */
+function verPDF(pdfUrl) {
+    if (!pdfUrl) {
+        alert('❌ URL del PDF no disponible');
+        return;
+    }
+    
+    // Asegurar URL completa
+    let url = pdfUrl;
+    if (!pdfUrl.startsWith('http')) {
+        url = pdfUrl.startsWith('/') ? pdfUrl : '/' + pdfUrl;
+    }
+    
+    window.open(url, '_blank');
+}
+
+function mostrarProcesandoPDF(mensaje = 'Procesando...') {
+    const overlay = document.createElement('div');
+    overlay.id = 'pdf-processing-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; max-width: 400px;">
+            <i class="fas fa-file-pdf fa-3x" style="color: #dc2626; margin-bottom: 15px;"></i>
+            <p style="font-weight: bold; margin: 0;">${mensaje}</p>
+            <p style="font-size: 0.9em; color: #666;">Por favor espere...</p>
+            <div style="margin-top: 15px;">
+                <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                    <div style="width: 60%; height: 100%; background: #2563eb; animation: loading 1.5s infinite;"></div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes loading {
+                0% { width: 0%; }
+                50% { width: 100%; }
+                100% { width: 0%; }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function ocultarProcesandoPDF() {
+    const overlay = document.getElementById('pdf-processing-overlay');
+    if (overlay) overlay.remove();
+}
+
+function verPDF(pdfUrl) {
+    window.open(pdfUrl, '_blank');
+}
+
+function actualizarBotonPDF(movimientoId, pdfUrl) {
+    // Buscar el botón en el historial y actualizarlo
+    const btn = document.querySelector(`.btn-pdf[data-movimiento-id="${movimientoId}"]`);
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-file-pdf"></i> Ver PDF';
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-success');
+        btn.onclick = () => verPDF(pdfUrl);
+    }
+}
 // Historial
+// app/templates/salida.html - Reemplazar la función cargarHistorialSalidas()
+
 async function cargarHistorialSalidas() {
     try {
-        const response = await fetch('/api/movimientos/');
+        const response = await fetch('/api/movimientos/?limit=20');
         const movimientos = await response.json();
         
         const salidas = movimientos
             .filter(m => m.tipo === 'salida')
-            .slice(0, 10);
+            .slice(0, 15); // Mostrar más entradas
         
         const historial = document.getElementById('historialSalidas');
         
@@ -1883,6 +2142,7 @@ async function cargarHistorialSalidas() {
                 <div class="empty-state">
                     <i class="fas fa-history fa-2x"></i>
                     <p>No hay salidas registradas</p>
+                    <small>Registra tu primera salida usando el formulario</small>
                 </div>
             `;
             return;
@@ -1890,24 +2150,80 @@ async function cargarHistorialSalidas() {
         
         let html = '';
         
-        salidas.forEach(movimiento => {
-            const fecha = new Date(movimiento.fecha_movimiento).toLocaleString();
-            const clienteMatch = movimiento.notas?.match(/Cliente:\s*(.+)/);
-            const cliente = clienteMatch ? clienteMatch[1] : '';
+        for (const movimiento of salidas) {
+            const fecha = new Date(movimiento.fecha_movimiento).toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Extraer cliente/destino
+            let cliente = movimiento.cliente_destino || 'No especificado';
+            if (!cliente && movimiento.notas) {
+                const match = movimiento.notas.match(/Cliente:\s*([^|]+)/i);
+                if (match) cliente = match[1];
+            }
+            
+            // Obtener información del PDF si existe
+            let pdfInfo = null;
+            try {
+                const pdfResponse = await fetch(`/api/movimientos/${movimiento.id}/pdf-info`);
+                pdfInfo = await pdfResponse.json();
+            } catch (error) {
+                console.error('Error obteniendo info PDF:', error);
+            }
+            
+            const tienePDF = pdfInfo?.tiene_pdf || movimiento.pdf_firmado ? true : false;
+            const pdfUrl = movimiento.pdf_firmado || pdfInfo?.pdf_url;
             
             html += `
-                <div class="historial-item">
-                    <div class="historial-fecha">${fecha}</div>
+                <div class="historial-item" data-movimiento-id="${movimiento.id}">
+                    <div class="historial-fecha">
+                        <i class="fas fa-calendar-alt"></i> ${fecha}
+                        ${tienePDF ? '<span class="pdf-badge"><i class="fas fa-check-circle"></i> PDF</span>' : ''}
+                    </div>
+                    
                     <div class="historial-info">
                         <div>
-                            <span class="historial-producto">${movimiento.producto ? movimiento.producto.nombre : 'Producto'}</span>
-                            ${cliente ? `<small>Cliente: ${cliente}</small>` : ''}
+                            <span class="historial-producto">
+                                ${movimiento.producto ? movimiento.producto.nombre : 'Producto ID: ' + movimiento.producto_id}
+                            </span>
+                            <small style="display: block; color: #6b7280; margin-top: 0.25rem;">
+                                <i class="fas fa-user"></i> ${cliente}
+                                ${movimiento.motivo ? `<br><i class="fas fa-tag"></i> ${movimiento.motivo}` : ''}
+                            </small>
                         </div>
-                        <span class="historial-cantidad danger">-${movimiento.cantidad}</span>
+                        <span class="historial-cantidad">-${movimiento.cantidad}</span>
+                    </div>
+                    
+                    <div class="historial-actions">
+                        <!-- BOTÓN PDF FIRMADO -->
+                        ${tienePDF ? `
+                            <button onclick="verPDF('${pdfUrl}')" 
+                                    class="btn-pdf btn-pdf-success"
+                                    title="Ver PDF firmado">
+                                <i class="fas fa-file-pdf"></i> Ver PDF
+                            </button>
+                        ` : `
+                            <button onclick="subirPDFSalida(${movimiento.id})" 
+                                    class="btn-pdf btn-pdf-warning"
+                                    title="Subir PDF firmado">
+                                <i class="fas fa-upload"></i> Subir PDF
+                            </button>
+                        `}
+                        
+                        <!-- BOTÓN COMPROBANTE -->
+                        <button onclick="generarComprobanteIndividual(${movimiento.id})" 
+                                class="btn-pdf btn-pdf-outline"
+                                title="Generar comprobante de salida">
+                            <i class="fas fa-print"></i> Comprobante
+                        </button>
                     </div>
                 </div>
             `;
-        });
+        }
         
         historial.innerHTML = html;
         
@@ -1915,13 +2231,50 @@ async function cargarHistorialSalidas() {
         console.error('Error cargando historial:', error);
         document.getElementById('historialSalidas').innerHTML = `
             <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
+                <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
                 <p>Error cargando historial</p>
+                <small>${error.message}</small>
+                <button onclick="cargarHistorialSalidas()" class="btn btn-primary btn-sm" style="margin-top: 1rem;">
+                    <i class="fas fa-redo"></i> Reintentar
+                </button>
             </div>
         `;
     }
 }
 
+async function generarComprobanteIndividual(movimientoId) {
+    try {
+        mostrarProcesandoPDF('Generando comprobante...');
+        
+        const response = await fetch(`/api/movimientos/salida/${movimientoId}/pdf`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error('Error generando comprobante');
+        }
+        
+        // Descargar PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `comprobante_salida_${movimientoId}_${new Date().toISOString().split('T')[0]}.pdf`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        ocultarProcesandoPDF();
+        mostrarExito('✅ Comprobante generado exitosamente');
+        
+    } catch (error) {
+        ocultarProcesandoPDF();
+        console.error('Error:', error);
+        alert(`❌ Error: ${error.message}`);
+    }
+}
 // Funciones auxiliares (similares a entrada)
 function mostrarExito(mensaje) {
     const alerta = document.createElement('div');

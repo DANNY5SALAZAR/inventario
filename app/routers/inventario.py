@@ -1,9 +1,11 @@
 # app/routers/inventario.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
-from .. import crud, schemas
+from .. import crud, schemas, models
 from ..database import get_db
+
 
 router = APIRouter(prefix="/inventario", tags=["inventario"])
 
@@ -57,4 +59,27 @@ def obtener_historial_producto(
         "producto": producto,
         "historial": historial,
         "total_movimientos": len(historial)
+    }
+@router.get("/dashboard")
+def get_dashboard_stats(db: Session = Depends(get_db)):
+    """
+    Obtener estadísticas para el dashboard principal.
+    """
+    # Total de productos
+    total_productos = db.query(models.Producto).count()
+    
+    # Productos bajo stock
+    productos_bajo_stock = db.query(models.Producto).filter(
+        models.Producto.stock_actual < models.Producto.stock_minimo
+    ).count()
+    
+    # Últimos 10 movimientos con sus productos
+    ultimos_movimientos = db.query(models.Movimiento).order_by(
+        models.Movimiento.fecha_movimiento.desc()
+    ).limit(10).all()
+    
+    return {
+        "total_productos": total_productos,
+        "productos_bajo_stock": productos_bajo_stock,
+        "ultimos_movimientos": ultimos_movimientos
     }

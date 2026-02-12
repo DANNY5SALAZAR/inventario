@@ -76,7 +76,8 @@ def crear_movimiento(db: Session, movimiento: schemas.MovimientoCreate):
         ubicacion=movimiento.ubicacion,  # Ubicación
         notas=movimiento.notas,  # Notas
         cliente_destino=movimiento.cliente_destino,  # 🆕 Para salidas
-        usuario=movimiento.usuario
+        usuario=movimiento.usuario,
+       
     )
     
     if movimiento.tipo == "entrada":
@@ -161,6 +162,56 @@ def crear_salida_multiple(db: Session, productos: list, destino: str, razon: str
     except Exception as e:
         db.rollback()
         raise e
+# app/crud.py - Agregar al final
 
+def crear_entrada_multiple(
+    db: Session, 
+    productos: list, 
+    tipo_origen: str, 
+    origen_nombre: str, 
+    ubicacion: str = None, 
+    observaciones: str = None, 
+    usuario: str = "admin"
+):
+    """
+    Crear múltiples entradas de productos (compra, donación, devolución, etc.)
+    """
+    movimientos_creados = []
+    
+    try:
+        for item in productos:
+            producto = get_producto(db, item['producto_id'])
+            if not producto:
+                raise ValueError(f"Producto ID {item['producto_id']} no encontrado")
+            
+            # Crear movimiento
+            db_movimiento = models.Movimiento(
+                producto_id=item['producto_id'],
+                tipo="entrada",
+                cantidad=item['cantidad'],
+                motivo=tipo_origen.capitalize(),
+                tipo_origen=tipo_origen,
+                origen_nombre=origen_nombre,
+                ubicacion=ubicacion,
+                notas=observaciones,
+                usuario=usuario
+            )
+            
+            # Actualizar stock
+            producto.stock_actual += item['cantidad']
+            
+            db.add(db_movimiento)
+            movimientos_creados.append(db_movimiento)
+        
+        db.commit()
+        
+        for movimiento in movimientos_creados:
+            db.refresh(movimiento)
+        
+        return movimientos_creados
+        
+    except Exception as e:
+        db.rollback()
+        raise e
     
  

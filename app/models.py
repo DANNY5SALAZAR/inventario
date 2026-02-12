@@ -39,6 +39,8 @@ class Movimiento(Base):
     cliente_destino = Column(String, nullable=True)  # 🆕 Para salidas
     usuario = Column(String, nullable=False, default="admin")
     fecha_movimiento = Column(DateTime, default=datetime.utcnow)
+    pdf_firmado = Column(String, nullable=True)  # Ruta del archivo PDF
+    pdf_nombre = Column(String, nullable=True)   # Nombre original del archivo
     
     # Relación
-    producto = relationship("Producto")
+    producto = relationship("Producto", back_populates="movimientos")

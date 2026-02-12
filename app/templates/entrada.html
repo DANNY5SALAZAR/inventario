@@ -21,109 +21,122 @@
         </div>
     </div>
     
-    <div class="entrada-container">
-        <div class="entrada-form-container">
-            <div class="form-card">
-                <h3><i class="fas fa-plus-circle"></i> Nueva Entrada</h3>
-                
-                <div class="form-section">
-                    <h4><i class="fas fa-search"></i> Buscar Producto</h4>
-                    <div class="search-product">
-                        <div class="search-input-group">
-                            <input type="text" id="buscarProducto" 
-                                   placeholder="Ingresa código o nombre del producto..."
-                                   class="form-control">
-                            <button onclick="buscarProducto()" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Buscar
-                            </button>
-                        </div>
-                        
-                        <div class="scan-option">
-                            <p>o</p>
-                            <button onclick="iniciarEscaneoEntrada()" class="btn btn-success">
-                                <i class="fas fa-camera"></i> Escanear Código
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="productoSeleccionado" class="hidden">
-                    <!-- Aquí se mostrará el producto seleccionado -->
-                </div>
-                
-                <div class="form-section">
-                    <h4><i class="fas fa-edit"></i> Detalles de la Entrada</h4>
-                    
-                    <div class="form-group">
-                        <label for="cantidad">
-                            <i class="fas fa-cube"></i> Cantidad *
-                        </label>
-                        <input type="number" id="cantidad" 
-                               min="1" value="1" class="form-control" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="motivo">
-                            <i class="fas fa-comment"></i> Motivo de Entrada *
-                        </label>
-                        <select id="motivo" class="form-select">
-                            <option value="Compra">Compra</option>
-                            <option value="Devolución">Devolución</option>
-                            <option value="Ajuste de Inventario">Ajuste de Inventario</option>
-                            <option value="Donación">Donación</option>
-                            <option value="Transferencia">Transferencia</option>
-                            <option value="Otro">Otro</option>
-                        </select>
-                    </div>
-                 <!-- Proveedor / Donante / Tercero -->
-                     <div class="form-group">
-                        <label for="origen_nombre">Proveedor / Donante / Tercero</label>
-                        <input
-                         type="text"
-                         id="origen_nombre"
-                         name="origen_nombre"
-                         placeholder="Ej: Proveedor o Donante"
-                         required
-                         >
-                    </div>
-                    <div class="form-group">
-                        <label for="ubicacion">
-                            <i class="fas fa-map-marker-alt"></i> Ubicación
-                        </label>
-                    <input type="text" id="ubicacion" name="ubicacion" 
-                           placeholder="Ej: Estante A1, Almacén 3">
-                </div>
-                    <div class="form-group">
-                        <label for="notas">
-                            <i class="fas fa-sticky-note"></i> Notas Adicionales
-                        </label>
-                        <textarea id="notas" rows="3" 
-                                  placeholder="Observaciones, proveedor, número de factura, etc."
-                                  class="form-control"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="fecha">
-                            <i class="fas fa-calendar"></i> Fecha de Entrada
-                        </label>
-                        <input type="datetime-local" id="fecha" 
-                               class="form-control">
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button onclick="agregarALista()" class="btn btn-primary" id="btnAgregar" disabled>
-                        <i class="fas fa-plus"></i> Agregar a la Lista
+    <div class="entrada-form-container">
+    <div class="form-card">
+        <h3><i class="fas fa-plus-circle"></i> Nueva Entrada</h3>
+        
+        <div class="form-section">
+            <h4><i class="fas fa-search"></i> Buscar Producto</h4>
+            <div class="search-product">
+                <div class="search-input-group">
+                    <input type="text" id="buscarProducto" 
+                           placeholder="Ingresa código o nombre del producto..."
+                           class="form-control" autofocus>
+                    <button onclick="buscarProducto()" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Buscar
                     </button>
-                    <button onclick="limpiarFormulario()" class="btn btn-secondary">
-                        <i class="fas fa-redo"></i> Limpiar
+                </div>
+                
+                <div class="scan-option">
+                    <p>o</p>
+                    <button onclick="iniciarEscaneoEntrada()" class="btn btn-success">
+                        <i class="fas fa-camera"></i> Escanear Código
                     </button>
                 </div>
             </div>
         </div>
+         
+        <div id="productoSeleccionado" class="hidden">
+            <!-- Aquí se mostrará el producto seleccionado -->
+        </div>
+         <!-- 🆕 CONTENEDOR DE PRODUCTOS SELECCIONADOS (VISIBLE CUANDO HAY) -->
+        <div id="productosSeleccionadosContainer" class="productos-seleccionados-container hidden">
+            <div class="productos-seleccionados-header">
+                <h4><i class="fas fa-boxes"></i> Productos para Entrada</h4>
+                <span class="badge" id="contadorProductosSeleccionados">0</span>
+            </div>
+            <div class="productos-seleccionados-list" id="listaProductosSeleccionados">
+                <div class="empty-state-small">
+                    <i class="fas fa-box-open"></i>
+                    <p>No hay productos seleccionados</p>
+                </div>
+            </div>
+            <div class="productos-seleccionados-footer">
+                <div class="total-unidades" id="totalUnidadesSeleccionadas">
+                    <strong>Total unidades:</strong> <span>0</span>
+                </div>
+                <button onclick="limpiarListaProductos()" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i> Limpiar todo
+                </button>
+            </div>
+        </div>      
+             
+        <div class="form-section">
+            <h4><i class="fas fa-edit"></i> Detalles de la Entrada</h4>
+            
+            <div class="form-group">
+                <label for="motivo">
+                    <i class="fas fa-comment"></i> Motivo de Entrada *
+                </label>
+                <select id="motivo" class="form-select">
+                    <option value="Compra">Compra</option>
+                    <option value="Donación">Donación</option>
+                    <option value="Devolución">Devolución</option>
+                    <option value="Traslado">Traslado</option>
+                    <option value="Ajuste de Inventario">Ajuste de Inventario</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="origen_nombre">
+                    <i class="fas fa-truck"></i> Proveedor / Donante / Tercero *
+                </label>
+                <input type="text" id="origen_nombre" 
+                       placeholder="Ej: Proveedor XYZ, Donante ABC"
+                       class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="ubicacion">
+                    <i class="fas fa-map-marker-alt"></i> Ubicación
+                </label>
+                <input type="text" id="ubicacion" 
+                       placeholder="Ej: Estante A1, Almacén 3"
+                       class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="notas">
+                    <i class="fas fa-sticky-note"></i> Notas Adicionales
+                </label>
+                <textarea id="notas" rows="3" 
+                          placeholder="Observaciones, número de factura, etc."
+                          class="form-control"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha">
+                    <i class="fas fa-calendar"></i> Fecha de Entrada
+                </label>
+                <input type="datetime-local" id="fecha" 
+                       class="form-control">
+            </div>
+        </div>
         
-        <div class="entrada-lista-container">
-            <div class="lista-card">
+        <div class="form-actions">
+            <button onclick="agregarALista()" class="btn btn-primary" id="btnAgregar" disabled>
+                <i class="fas fa-plus"></i> Agregar a la Lista
+            </button>
+            <button onclick="limpiarFormulario()" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> Limpiar
+            </button>
+        </div>
+    </div>
+</div>
+    <!-- ===== LISTA DE ENTRADAS PENDIENTES ===== -->
+    <div class="entrada-lista-container">
+     <div class="lista-card">
                 <div class="lista-header">
                     <h3><i class="fas fa-list"></i> Entradas Pendientes</h3>
                     <span class="badge" id="contadorEntradas">0</span>
@@ -149,7 +162,7 @@
                         </div>
                         <div class="total-item">
                             <span>Proveedor:</span>
-                            <strong id="proveedorPrincipal">Varios</strong>
+                            <strong id="proveedorPrincipal">-</strong>
                         </div>
                     </div>
                     
@@ -174,8 +187,9 @@
                 </div>
             </div>
         </div>
-    </div>
-    
+        
+    </div> <!-- Cierra entrada-container -->
+</div> 
     <!-- Modal de escaneo -->
     <div id="modalEscaneo" class="modal hidden">
         <div class="modal-content">
@@ -223,7 +237,17 @@
     gap: 2rem;
     margin-top: 2rem;
 }
-
+/* Columna izquierda: Formulario */
+.entrada-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.entrada-lista-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
 @media (max-width: 1024px) {
     .entrada-container {
         grid-template-columns: 1fr;
@@ -707,14 +731,514 @@
         grid-template-columns: 1fr;
     }
 }
+/* Estilos para productos seleccionados */
+.productos-seleccionados-container {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(to bottom, #f8fafc, white);
+    border-radius: 0.75rem;
+    border: 2px solid var(--primary);
+}
+
+.productos-seleccionados-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.productos-seleccionados-header h4 {
+    color: var(--primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.productos-seleccionados-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.producto-seleccionado-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.producto-seleccionado-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.producto-seleccionado-info {
+    flex: 1;
+}
+
+.producto-seleccionado-info strong {
+    display: block;
+    color: var(--dark);
+}
+
+.producto-seleccionado-info small {
+    color: var(--secondary);
+    font-size: 0.85rem;
+}
+
+.producto-seleccionado-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.producto-seleccionado-cantidad input {
+    width: 80px;
+    text-align: center;
+}
+
+.btn-icon-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-sm:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.entrada-multiple-item {
+    background: linear-gradient(to right, #f0f9ff, white);
+    border-left: 4px solid var(--primary);
+}
+
+.entrada-multiple-item .entrada-producto {
+    color: var(--primary);
+}
+
+.entrada-multiple-item .entrada-producto i {
+    margin-right: 0.5rem;
+}
+
+.detalle-info {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin: 1rem 0;
+}
+
+.detalle-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.detalle-table th,
+.detalle-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.detalle-table th {
+    background: #f1f5f9;
+    font-weight: 600;
+}
+
+.detalle-table tfoot th {
+    background: #f1f5f9;
+    border-top: 2px solid #cbd5e1;
+}
+/* Estilos para el contenedor de productos seleccionados */
+.productos-seleccionados-container {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(to bottom, #f8fafc, white);
+    border-radius: 0.75rem;
+    border: 2px solid var(--primary);
+    transition: all 0.3s ease;
+}
+
+.productos-seleccionados-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.productos-seleccionados-header h4 {
+    color: var(--primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.productos-seleccionados-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.productos-seleccionados-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.total-unidades {
+    font-size: 1.1rem;
+    color: var(--dark);
+}
+
+.total-unidades span {
+    font-weight: 700;
+    color: var(--primary);
+    margin-left: 0.5rem;
+}
+
+.empty-state-small {
+    text-align: center;
+    padding: 2rem;
+    color: var(--secondary);
+}
+
+.empty-state-small i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+}
+
+/* Estilos para productos seleccionados */
+.producto-seleccionado-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.producto-seleccionado-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.producto-seleccionado-info {
+    flex: 1;
+}
+
+.producto-seleccionado-info strong {
+    display: block;
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+}
+
+.producto-seleccionado-info small {
+    color: var(--secondary);
+    font-size: 0.85rem;
+}
+
+.producto-seleccionado-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.producto-seleccionado-cantidad input {
+    width: 80px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.5rem;
+}
+
+.producto-seleccionado-cantidad input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.btn-icon-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-sm:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.btn-outline-danger {
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    background: white;
+}
+
+.btn-outline-danger:hover {
+    background: var(--danger);
+    color: white;
+}
+/* ===== ESTILOS PARA LA LISTA DE ENTRADAS PENDIENTES ===== */
+
+.lista-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.lista-header {
+    padding: 1.5rem;
+    background: var(--light);
+    border-bottom: 1px solid var(--gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.lista-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lista-body {
+    padding: 1.5rem;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.lista-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--gray);
+    background: var(--light);
+}
+
+.lista-totales {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray);
+}
+
+.total-item {
+    text-align: center;
+}
+
+.total-item span {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--secondary);
+    margin-bottom: 0.25rem;
+}
+
+.total-item strong {
+    font-size: 1.25rem;
+    color: var(--dark);
+}
+
+.lista-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* Estilos para los items de entrada */
+.entrada-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--light);
+    border-radius: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.entrada-item:hover {
+    background: #e2e8f0;
+}
+
+.entrada-info {
+    flex: 1;
+}
+
+.entrada-producto {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--dark);
+}
+
+.entrada-detalles {
+    font-size: 0.9rem;
+    color: var(--secondary);
+}
+
+.entrada-cantidad {
+    background: var(--success);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    margin: 0 1rem;
+}
+
+.entrada-multiple-item {
+    border-left: 4px solid var(--primary);
+}
+
+.entrada-multiple-item .entrada-producto {
+    color: var(--primary);
+}
+
+.entrada-multiple-item .entrada-producto i {
+    margin-right: 0.5rem;
+}
+
+.productos-resumen {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(37, 99, 235, 0.05);
+    border-radius: 0.375rem;
+}
+
+.badge {
+    background: var(--primary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge.bg-primary {
+    background: var(--primary);
+}
+
+.badge.bg-secondary {
+    background: var(--secondary);
+}
+
+.historial-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+}
+
+.historial-card h3 {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.historial-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.historial-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--gray);
+}
+
+.historial-item:last-child {
+    border-bottom: none;
+}
+
+.historial-fecha {
+    font-size: 0.85rem;
+    color: var(--secondary);
+    margin-bottom: 0.25rem;
+}
+
+.historial-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.historial-producto {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.historial-cantidad {
+    background: var(--success);
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid var(--gray);
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
 </style>
 
 <script>
+// ===== VARIABLES GLOBALES =====
 let scanner = null;
 let entradasPendientes = [];
 let productoSeleccionado = null;
+let productosSeleccionadosEntrada = []; // Para cuando se agregan varios
 
-// Inicializar
+// ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
     cargarHistorialEntradas();
     
@@ -732,10 +1256,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Buscar producto
+// ===== BUSCAR PRODUCTO =====
 async function buscarProducto() {
     const query = document.getElementById('buscarProducto').value.trim();
-    console.log('Query:', query);
     
     if (!query) {
         alert('Por favor ingresa un código o nombre para buscar');
@@ -743,20 +1266,14 @@ async function buscarProducto() {
     }
     
     try {
-        // CORRECTO: Solo una línea de fetch
         const url = `/api/productos/buscar?q=${encodeURIComponent(query)}`;
-        console.log('URL:', url);
-        
         const response = await fetch(url);
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
-            console.log('Response not OK:', await response.text());
             throw new Error(`HTTP ${response.status}`);
         }
         
         const productos = await response.json();
-        console.log('Productos encontrados:', productos);
         
         if (productos.length === 0) {
             alert('No se encontró ningún producto');
@@ -770,70 +1287,189 @@ async function buscarProducto() {
         }
         
     } catch (error) {
-        console.error('Error completo buscando producto:', error);
+        console.error('Error buscando producto:', error);
         alert(`Error al buscar producto: ${error.message}`);
     }
 }
 
+// ===== SELECCIONAR PRODUCTO =====
 function seleccionarProducto(producto) {
-    productoSeleccionado = producto;
+    // SIEMPRE agregar a la lista de productos seleccionados
+    agregarProductoALista(producto);
+}
+
+function agregarProductoALista(producto) {
+    // Verificar si ya está en la lista
+    const existente = productosSeleccionadosEntrada.find(p => p.id === producto.id);
     
+    if (existente) {
+        existente.cantidad += 1;
+        mostrarExito(`${producto.nombre}: +1 unidad (total: ${existente.cantidad})`);
+    } else {
+        productosSeleccionadosEntrada.push({
+            id: producto.id,
+            nombre: producto.nombre,
+            codigo: producto.codigo,
+            stock_actual: producto.stock_actual,
+            cantidad: 1
+        });
+        mostrarExito(`${producto.nombre} agregado a la lista`);
+    }
+    
+    // Actualizar la interfaz
+    actualizarListaProductosSeleccionados();
+    actualizarVistaProductoSeleccionado();
+    
+    // Limpiar campo de búsqueda
+    document.getElementById('buscarProducto').value = '';
+    document.getElementById('buscarProducto').focus();
+    
+    // Habilitar botón de agregar
+    document.getElementById('btnAgregar').disabled = false;
+}
+
+function actualizarVistaProductoSeleccionado() {
+    if (productosSeleccionadosEntrada.length === 0) {
+        document.getElementById('productoSeleccionado').classList.add('hidden');
+        return;
+    }
+    
+    // Mostrar el primer producto como referencia
+    const producto = productosSeleccionadosEntrada[0];
     const container = document.getElementById('productoSeleccionado');
+    
     container.innerHTML = `
         <div class="producto-info">
             <div class="producto-header">
                 <span class="producto-codigo">${producto.codigo}</span>
-                <button onclick="deseleccionarProducto()" class="btn-icon">
+                <button onclick="limpiarListaProductos()" class="btn-icon" title="Limpiar todos">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
             <h3 class="producto-nombre">${producto.nombre}</h3>
-            
             <div class="producto-detalles">
                 <div class="detalle-item">
                     <span class="detalle-label">Stock Actual</span>
                     <span class="detalle-valor">${producto.stock_actual}</span>
                 </div>
                 <div class="detalle-item">
-                    <span class="detalle-label">Stock Mínimo</span>
-                    <span class="detalle-valor">${producto.stock_minimo}</span>
+                    <span class="detalle-label">Productos</span>
+                    <span class="detalle-valor">${productosSeleccionadosEntrada.length}</span>
                 </div>
                 <div class="detalle-item">
-                    <span class="detalle-label">Categoría</span>
-                    <span class="detalle-valor">${producto.categoria || 'Sin categoría'}</span>
-                </div>
-                <div class="detalle-item">
-                    <span class="detalle-label">Descripción</span>
-                    <span class="detalle-valor">${producto.descripcion || 'Sin descripción'}</span>
+                    <span class="detalle-label">Total Unidades</span>
+                    <span class="detalle-valor">${calcularTotalUnidades()}</span>
                 </div>
             </div>
-            
-            <div class="producto-alerta" id="productoAlerta"></div>
         </div>
     `;
     
     container.classList.remove('hidden');
+}
+
+function actualizarListaProductosSeleccionados() {
+    // Crear contenedor si no existe
+    let container = document.getElementById('productosSeleccionadosContainer');
     
-    // Verificar stock bajo
-    if (producto.stock_actual < producto.stock_minimo) {
-        const alerta = document.getElementById('productoAlerta');
-        alerta.innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                ¡Atención! Este producto está por debajo del stock mínimo
-            </div>
-        `;
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'productosSeleccionadosContainer';
+        container.className = 'productos-seleccionados-container';
+        
+        const formSection = document.querySelector('.form-section:last-of-type');
+        formSection.parentNode.insertBefore(container, formSection.nextSibling);
     }
     
-    // Habilitar botón de agregar
-    document.getElementById('btnAgregar').disabled = false;
-    document.getElementById('buscarProducto').value = '';
+    if (productosSeleccionadosEntrada.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    
+    let html = `
+        <div class="productos-seleccionados-header">
+            <h4><i class="fas fa-boxes"></i> Productos para Entrada</h4>
+            <span class="badge">${productosSeleccionadosEntrada.length}</span>
+        </div>
+        <div class="productos-seleccionados-list">
+    `;
+    
+    productosSeleccionadosEntrada.forEach((producto, index) => {
+        html += `
+            <div class="producto-seleccionado-item">
+                <div class="producto-seleccionado-info">
+                    <strong>${producto.nombre}</strong>
+                    <small>${producto.codigo} • Stock: ${producto.stock_actual}</small>
+                </div>
+                <div class="producto-seleccionado-cantidad">
+                    <input type="number" 
+                           value="${producto.cantidad}" 
+                           min="1" 
+                           onchange="actualizarCantidadProducto(${index}, this.value)"
+                           class="form-control form-control-sm">
+                    <span>unidades</span>
+                    <button onclick="eliminarProducto(${index})" 
+                            class="btn-icon-sm" title="Eliminar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    
+    container.innerHTML = html;
 }
+
+function actualizarCantidadProducto(index, cantidad) {
+    if (productosSeleccionadosEntrada[index]) {
+        cantidad = parseInt(cantidad) || 1;
+        if (cantidad <= 0) cantidad = 1;
+        productosSeleccionadosEntrada[index].cantidad = cantidad;
+        actualizarVistaProductoSeleccionado();
+        actualizarListaProductosSeleccionados();
+    }
+}
+
+function eliminarProducto(index) {
+    if (confirm('¿Eliminar este producto de la lista?')) {
+        productosSeleccionadosEntrada.splice(index, 1);
+        actualizarListaProductosSeleccionados();
+        actualizarVistaProductoSeleccionado();
+        
+        if (productosSeleccionadosEntrada.length === 0) {
+            deseleccionarProducto();
+        }
+    }
+}
+
+function limpiarListaProductos() {
+    if (productosSeleccionadosEntrada.length > 0) {
+        if (confirm('¿Limpiar todos los productos de la lista?')) {
+            productosSeleccionadosEntrada = [];
+            actualizarListaProductosSeleccionados();
+            deseleccionarProducto();
+        }
+    }
+}
+
+function calcularTotalUnidades() {
+    return productosSeleccionadosEntrada.reduce((sum, p) => sum + p.cantidad, 0);
+}
+
 function deseleccionarProducto() {
     productoSeleccionado = null;
+    productosSeleccionadosEntrada = [];
+    
     document.getElementById('productoSeleccionado').classList.add('hidden');
     document.getElementById('btnAgregar').disabled = true;
+    
+    const container = document.getElementById('productosSeleccionadosContainer');
+    if (container) {
+        container.classList.add('hidden');
+    }
 }
 
 function mostrarSelectorProductos(productos) {
@@ -874,147 +1510,130 @@ async function seleccionarDesdeLista(productoId) {
     }
 }
 
-// Escaneo
-function iniciarEscaneoEntrada() {
-    const modal = document.getElementById('modalEscaneo');
-    modal.classList.remove('hidden');
-    
-    // Inicializar escáner
-    setTimeout(() => {
-        if (!scanner) {
-            scanner = new QRScanner({
-                elementId: 'scannerEntrada',
-                onScan: procesarCodigoEscaneado,
-                onError: (error) => {
-                    console.error('Error del escáner:', error);
-                    alert('Error al acceder a la cámara');
-                    cerrarModalEscaneo();
-                }
-            });
-        }
-        
-        scanner.start();
-    }, 100);
-}
+// ===== AGREGAR A LISTA DE ENTRADAS PENDIENTES =====
 
-function cerrarModalEscaneo() {
-    if (scanner) {
-        scanner.stop();
-    }
-    
-    const modal = document.getElementById('modalEscaneo');
-    modal.classList.add('hidden');
-    document.getElementById('codigoManual').value = '';
-}
-
-async function procesarCodigoEscaneado(resultado) {
-    if (resultado.valid) {
-        // Buscar producto por código
-        try {
-            const response = await fetch(`/api/productos/codigo/${resultado.code}`);
-            const producto = await response.json();
-            
-            seleccionarProducto(producto);
-            cerrarModalEscaneo();
-            
-            // Enfocar en cantidad
-            document.getElementById('cantidad').focus();
-            
-        } catch (error) {
-            // Producto no encontrado
-            mostrarOpcionCrearProducto(resultado.code);
-        }
-    }
-}
-
-function procesarCodigoManual() {
-    const codigo = document.getElementById('codigoManual').value.trim();
-    if (!codigo) {
-        alert('Por favor ingresa un código');
-        return;
-    }
-    
-    // Simular resultado de escaneo
-    procesarCodigoEscaneado({
-        code: codigo,
-        valid: true,
-        type: 'manual'
-    });
-}
-
-function mostrarOpcionCrearProducto(codigo) {
-    const confirmar = confirm(`El código "${codigo}" no existe. ¿Deseas crear un nuevo producto con este código?`);
-    
-    if (confirmar) {
-        cerrarModalEscaneo();
-        setTimeout(() => {
-            window.location.href = `/productos/crear?codigo=${encodeURIComponent(codigo)}`;
-        }, 500);
-    }
-}
-
-// Manejo de entradas
 function agregarALista() {
-    if (!productoSeleccionado) {
-        alert('Por favor selecciona un producto primero');
+    if (productosSeleccionadosEntrada.length === 0) {
+        alert('❌ Por favor selecciona al menos un producto');
         return;
     }
     
-    const cantidad = parseInt(document.getElementById('cantidad').value);
     const motivo = document.getElementById('motivo').value;
-    const origenNombre = document.getElementById('origen_nombre').value;  // NUEVO
-    const ubicacion = document.getElementById('ubicacion').value;  // NUEVO
+    const origenNombre = document.getElementById('origen_nombre').value;
+    const ubicacion = document.getElementById('ubicacion').value;
     const notas = document.getElementById('notas').value;
     const fecha = document.getElementById('fecha').value;
     
     // Validaciones
-    if (cantidad <= 0) {
-        alert('La cantidad debe ser mayor a 0');
-        return;
-    }
-    
     if (!origenNombre.trim()) {
-        alert('Por favor ingresa el proveedor/donante');
+        alert('❌ Por favor ingresa el proveedor/donante');
+        document.getElementById('origen_nombre').focus();
         return;
     }
     
-    // Crear entrada
-    const entrada = {
-        id: Date.now(), // ID temporal
-        producto: productoSeleccionado,
-        producto_id: productoSeleccionado.id,
-        cantidad: cantidad,
-        motivo: motivo,
-        origen_nombre: origenNombre,  // NUEVO
-        ubicacion: ubicacion,  // NUEVO
-        notas: notas,
-        fecha: fecha || new Date().toISOString()
-    };
+    // CONFIRMAR ANTES DE AGREGAR
+    let mensajeConfirmacion = '';
     
-    // Agregar a la lista
-    entradasPendientes.push(entrada);
+    if (productosSeleccionadosEntrada.length === 1) {
+        const producto = productosSeleccionadosEntrada[0];
+        mensajeConfirmacion = `¿Agregar esta entrada?\n\n` +
+            `📦 Producto: ${producto.nombre}\n` +
+            `🔢 Cantidad: ${producto.cantidad} unidades\n` +
+            `🏢 Proveedor: ${origenNombre}\n` +
+            `📍 Ubicación: ${ubicacion || 'No especificada'}`;
+    } else {
+        const totalUnidades = calcularTotalUnidades();
+        mensajeConfirmacion = `¿Agregar esta ENTRADA MÚLTIPLE?\n\n` +
+            `📦 Productos: ${productosSeleccionadosEntrada.length} diferentes\n` +
+            `🔢 Total unidades: ${totalUnidades}\n` +
+            `🏢 Proveedor: ${origenNombre}\n` +
+            `📍 Ubicación: ${ubicacion || 'No especificada'}\n\n` +
+            `Lista de productos:\n` +
+            productosSeleccionadosEntrada.map(p => 
+                `  • ${p.nombre}: ${p.cantidad} unidades`
+            ).join('\n');
+    }
     
-    // Actualizar interfaz
+    if (!confirm(mensajeConfirmacion)) {
+        return; // Usuario canceló
+    }
+    
+    if (productosSeleccionadosEntrada.length === 1) {
+        // Entrada INDIVIDUAL
+        const producto = productosSeleccionadosEntrada[0];
+        const entrada = {
+            id: Date.now(),
+            producto: {
+                id: producto.id,
+                nombre: producto.nombre,
+                codigo: producto.codigo,
+                stock_actual: producto.stock_actual
+            },
+            producto_id: producto.id,
+            cantidad: producto.cantidad,
+            motivo: motivo,
+            origen_nombre: origenNombre,
+            ubicacion: ubicacion,
+            notas: notas,
+            fecha: fecha || new Date().toISOString()
+        };
+        
+        entradasPendientes.push(entrada);
+        mostrarExito(`✅ ${producto.cantidad} unidades de "${producto.nombre}" agregadas a la lista de pendientes`);
+        
+    } else {
+        // Entrada MÚLTIPLE
+        const entradaMultiple = {
+            id: Date.now(),
+            tipo: 'multiple',
+            productos: productosSeleccionadosEntrada.map(p => ({
+                producto_id: p.id,
+                producto_nombre: p.nombre,
+                producto_codigo: p.codigo,
+                cantidad: p.cantidad,
+                stock_actual: p.stock_actual
+            })),
+            total_productos: productosSeleccionadosEntrada.length,
+            total_unidades: calcularTotalUnidades(),
+            motivo: motivo,
+            origen_nombre: origenNombre,
+            ubicacion: ubicacion,
+            notas: notas,
+            fecha: fecha || new Date().toISOString()
+        };
+        
+        entradasPendientes.push(entradaMultiple);
+        mostrarExito(`✅ Entrada múltiple agregada: ${productosSeleccionadosEntrada.length} productos, ${calcularTotalUnidades()} unidades totales`);
+    }
+    
+    // Limpiar todo después de agregar
+    productosSeleccionadosEntrada = [];
     actualizarListaEntradas();
     limpiarFormulario();
     
-    // Mostrar confirmación
-    mostrarExito(`${cantidad} unidades de "${productoSeleccionado.nombre}" agregadas a la lista`);
+    // Ocultar contenedor de productos seleccionados
+    const container = document.getElementById('productosSeleccionadosContainer');
+    if (container) {
+        container.classList.add('hidden');
+    }
+    console.log('✅ Entrada agregada, pendientes:', entradasPendientes.length); // Debug
 }
 
-function limpiarFormulario() {
-    deseleccionarProducto();
-    document.getElementById('cantidad').value = 1;
-    document.getElementById('notas').value = '';
-    document.getElementById('fecha').value = new Date().toISOString().slice(0, 16);
-    document.getElementById('buscarProducto').focus();
-}
 
+// ===== ACTUALIZAR LISTA DE ENTRADAS PENDIENTES =====
 function actualizarListaEntradas() {
+    console.log('Actualizando lista de entradas...', entradasPendientes); // Debug
+    
     const lista = document.getElementById('listaEntradas');
     const contador = document.getElementById('contadorEntradas');
     const btnRegistrar = document.getElementById('btnRegistrar');
     
+    if (!lista) {
+        console.error('❌ No se encontró el elemento listaEntradas');
+        return;
+    }
+    
+    // Actualizar contador y botón
     contador.textContent = entradasPendientes.length;
     btnRegistrar.disabled = entradasPendientes.length === 0;
     
@@ -1030,28 +1649,67 @@ function actualizarListaEntradas() {
         let html = '';
         
         entradasPendientes.forEach((entrada, index) => {
-            html += `
-                <div class="entrada-item">
-                    <div class="entrada-info">
-                        <div class="entrada-producto">${entrada.producto.nombre}</div>
-                        <div class="entrada-detalles">
-                            <small>
-                                ${entrada.motivo} | 
-                                ${entrada.origen_nombre} | 
-                                ${entrada.ubicacion || 'Sin ubicación'}
-                            </small>
+            if (entrada.tipo === 'multiple') {
+                // Entrada MÚLTIPLE
+                html += `
+                    <div class="entrada-item entrada-multiple-item">
+                        <div class="entrada-info">
+                            <div class="entrada-producto">
+                                <i class="fas fa-boxes"></i> Entrada Múltiple
+                                <span class="badge bg-primary">${entrada.total_productos} prod.</span>
+                            </div>
+                            <div class="entrada-detalles">
+                                <small>
+                                    <i class="fas fa-truck"></i> ${entrada.origen_nombre} • 
+                                    <i class="fas fa-map-marker-alt"></i> ${entrada.ubicacion || 'Sin ubicación'} • 
+                                    <i class="fas fa-cubes"></i> ${entrada.total_unidades} unid.
+                                </small>
+                                <div class="productos-resumen">
+                                    <small class="text-muted">
+                                        ${entrada.productos.map(p => 
+                                            `${p.producto_nombre} (${p.cantidad})`
+                                        ).join(', ').substring(0, 60)}...
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="entrada-cantidad">${entrada.total_unidades}</div>
+                        <div class="entrada-acciones">
+                            <button class="btn-icon" onclick="verDetalleEntrada(${index})" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon" onclick="eliminarEntrada(${index})" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="entrada-cantidad">${entrada.cantidad}</div>
-                    
-                    <div class="entrada-acciones">
-                        <button class="btn-icon" onclick="eliminarEntrada(${index})" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                `;
+            } else {
+                // Entrada INDIVIDUAL
+                html += `
+                    <div class="entrada-item">
+                        <div class="entrada-info">
+                            <div class="entrada-producto">
+                                ${entrada.producto.nombre}
+                                <span class="badge bg-secondary">${entrada.producto.codigo}</span>
+                            </div>
+                            <div class="entrada-detalles">
+                                <small>
+                                    <i class="fas fa-tag"></i> ${entrada.motivo} • 
+                                    <i class="fas fa-truck"></i> ${entrada.origen_nombre}
+                                    ${entrada.ubicacion ? ` • <i class="fas fa-map-marker-alt"></i> ${entrada.ubicacion}` : ''}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="entrada-cantidad">+${entrada.cantidad}</div>
+                        <div class="entrada-acciones">
+                            <button class="btn-icon" onclick="eliminarEntrada(${index})" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         });
         
         lista.innerHTML = html;
@@ -1059,11 +1717,65 @@ function actualizarListaEntradas() {
     
     // Actualizar totales
     actualizarTotales();
+    console.log('✅ Lista actualizada, total:', entradasPendientes.length);
+}
+
+function verDetalleEntrada(index) {
+    const entrada = entradasPendientes[index];
+    
+    if (entrada.tipo !== 'multiple') {
+        alert('Esta es una entrada individual');
+        return;
+    }
+    
+    let html = `
+        <h3><i class="fas fa-boxes"></i> Detalle de Entrada Múltiple</h3>
+        <div class="detalle-info">
+            <p><strong>Proveedor/Donante:</strong> ${entrada.origen_nombre}</p>
+            <p><strong>Motivo:</strong> ${entrada.motivo}</p>
+            <p><strong>Ubicación:</strong> ${entrada.ubicacion || 'No especificada'}</p>
+            <p><strong>Fecha:</strong> ${new Date(entrada.fecha).toLocaleString()}</p>
+            ${entrada.notas ? `<p><strong>Notas:</strong> ${entrada.notas}</p>` : ''}
+        </div>
+        <h4>Productos:</h4>
+        <table class="detalle-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Código</th>
+                    <th>Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    entrada.productos.forEach(p => {
+        html += `
+            <tr>
+                <td>${p.producto_nombre}</td>
+                <td>${p.producto_codigo}</td>
+                <td>${p.cantidad}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="2">Total</th>
+                    <th>${entrada.total_unidades} unidades</th>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+    
+    const modal = crearModal(html);
+    mostrarModal(modal);
 }
 
 function eliminarEntrada(index) {
-    const entrada = entradasPendientes[index];
-    if (confirm(`¿Eliminar entrada de ${entrada.cantidad} unidades de "${entrada.producto.nombre}"?`)) {
+    if (confirm('¿Eliminar esta entrada de la lista?')) {
         entradasPendientes.splice(index, 1);
         actualizarListaEntradas();
     }
@@ -1071,20 +1783,22 @@ function eliminarEntrada(index) {
 
 function actualizarTotales() {
     const totalProductos = entradasPendientes.length;
-    const totalUnidades = entradasPendientes.reduce((sum, e) => sum + e.cantidad, 0);
+    let totalUnidades = 0;
+    let proveedores = {};
     
-    // Obtener proveedor principal (el más frecuente)
-    let proveedorPrincipal = 'Varios';
-    if (entradasPendientes.length > 0) {
-        const proveedores = {};
-        entradasPendientes.forEach(e => {
-            proveedores[e.origen_nombre] = (proveedores[e.origen_nombre] || 0) + 1;
-        });
-        
-        const masFrecuente = Object.entries(proveedores).sort((a, b) => b[1] - a[1])[0];
-        if (masFrecuente && masFrecuente[1] === entradasPendientes.length) {
-            proveedorPrincipal = masFrecuente[0];
+    entradasPendientes.forEach(entrada => {
+        if (entrada.tipo === 'multiple') {
+            totalUnidades += entrada.total_unidades;
+            proveedores[entrada.origen_nombre] = (proveedores[entrada.origen_nombre] || 0) + 1;
+        } else {
+            totalUnidades += entrada.cantidad;
+            proveedores[entrada.origen_nombre] = (proveedores[entrada.origen_nombre] || 0) + 1;
         }
+    });
+    
+    let proveedorPrincipal = 'Varios';
+    if (Object.keys(proveedores).length === 1) {
+        proveedorPrincipal = Object.keys(proveedores)[0];
     }
     
     document.getElementById('totalProductos').textContent = totalProductos;
@@ -1093,84 +1807,254 @@ function actualizarTotales() {
 }
 
 function limpiarFormulario() {
-    deseleccionarProducto();
-    document.getElementById('cantidad').value = 1;
-    document.getElementById('origen_nombre').value = '';  // NUEVO
-    document.getElementById('ubicacion').value = '';  // NUEVO
-    document.getElementById('notas').value = '';
-    document.getElementById('fecha').value = new Date().toISOString().slice(0, 16);
-    document.getElementById('buscarProducto').focus();
+    try {
+        // Deseleccionar producto
+        deseleccionarProducto();
+        
+        // Limpiar campos de forma segura
+        const cantidadInput = document.getElementById('cantidad');
+        if (cantidadInput) cantidadInput.value = 1;
+        
+        const origenInput = document.getElementById('origen_nombre');
+        if (origenInput) origenInput.value = '';
+        
+        const ubicacionInput = document.getElementById('ubicacion');
+        if (ubicacionInput) ubicacionInput.value = '';
+        
+        const notasInput = document.getElementById('notas');
+        if (notasInput) notasInput.value = '';
+        
+        // Establecer fecha actual
+        const fechaInput = document.getElementById('fecha');
+        if (fechaInput) {
+            const now = new Date();
+            fechaInput.value = now.toISOString().slice(0, 16);
+        }
+        
+        // Enfocar en búsqueda
+        const buscarInput = document.getElementById('buscarProducto');
+        if (buscarInput) {
+            buscarInput.value = '';
+            buscarInput.focus();
+        }
+        
+        // Deshabilitar botón de agregar
+        const btnAgregar = document.getElementById('btnAgregar');
+        if (btnAgregar) btnAgregar.disabled = true;
+        
+    } catch (error) {
+        console.error('Error en limpiarFormulario:', error);
+    }
 }
 
-// Registrar entradas
+// ===== REGISTRAR ENTRADAS =====
+// ===== REGISTRAR ENTRADAS =====
 async function registrarEntradas() {
-    if (entradasPendientes.length === 0) return;
+    if (entradasPendientes.length === 0) {
+        alert('No hay entradas pendientes para registrar');
+        return;
+    }
     
-    const confirmar = confirm(`¿Registrar ${entradasPendientes.length} entrada(s) con un total de ${entradasPendientes.reduce((s, e) => s + e.cantidad, 0)} unidades?`);
+    const confirmar = confirm(`¿Registrar ${entradasPendientes.length} entrada(s) con un total de ${entradasPendientes.reduce((s, e) => s + (e.total_unidades || e.cantidad || 0), 0)} unidades?`);
     
     if (!confirmar) return;
     
     try {
         const resultados = [];
+        let exitosas = 0;
         
-        // Registrar cada entrada
         for (const entrada of entradasPendientes) {
-            const movimiento = {
-                producto_id: entrada.producto_id,
-                tipo: 'entrada',
-                cantidad: entrada.cantidad,
-                motivo: entrada.motivo,
-                tipo_origen: entrada.motivo.toLowerCase().includes('donacion') ? 'donacion' : 
-                            entrada.motivo.toLowerCase().includes('compra') ? 'compra' : 'otro',
-                origen_nombre: entrada.origen_nombre,  // NUEVO
-                ubicacion: entrada.ubicacion,  // NUEVO
-                notas: entrada.notas,
-                usuario: 'admin'
-            };
-            
-            const response = await fetch('/api/movimientos/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(movimiento)
-            });
-            
-            const resultado = await response.json();
-            resultados.push({
-                producto: entrada.producto.nombre,
-                success: response.ok,
-                message: response.ok ? 'Registrado' : resultado.detail
-            });
+            if (entrada.tipo === 'multiple') {
+                // Entrada MÚLTIPLE
+                const data = {
+                    productos: entrada.productos.map(p => ({
+                        producto_id: p.producto_id,
+                        cantidad: p.cantidad
+                    })),
+                    tipo_origen: entrada.motivo.toLowerCase().includes('donación') ? 'donacion' : 
+                                entrada.motivo.toLowerCase().includes('compra') ? 'compra' : 
+                                entrada.motivo.toLowerCase().includes('devolución') ? 'devolucion' : 
+                                entrada.motivo.toLowerCase().includes('traslado') ? 'traslado' : 'ajuste',
+                    origen_nombre: entrada.origen_nombre,
+                    ubicacion: entrada.ubicacion || '',
+                    observaciones: entrada.notas || '',
+                    usuario: 'admin'
+                };
+                
+                const response = await fetch('/api/movimientos/entrada-multiple', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    exitosas++;
+                    resultados.push(`✅ Entrada múltiple: ${entrada.productos.length} productos registrados`);
+                } else {
+                    const error = await response.json();
+                    resultados.push(`❌ Error en entrada múltiple: ${error.detail || 'Error desconocido'}`);
+                }
+                
+            } else {
+                // Entrada INDIVIDUAL
+                const movimiento = {
+                    producto_id: entrada.producto_id,
+                    tipo: 'entrada',
+                    cantidad: entrada.cantidad,
+                    motivo: entrada.motivo,
+                    tipo_origen: entrada.motivo.toLowerCase().includes('donación') ? 'donacion' : 
+                                entrada.motivo.toLowerCase().includes('compra') ? 'compra' : 
+                                entrada.motivo.toLowerCase().includes('devolución') ? 'devolucion' : 
+                                entrada.motivo.toLowerCase().includes('traslado') ? 'traslado' : 'ajuste',
+                    origen_nombre: entrada.origen_nombre,
+                    ubicacion: entrada.ubicacion || '',
+                    notas: entrada.notas || '',
+                    usuario: 'admin'
+                };
+                
+                const response = await fetch('/api/movimientos/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(movimiento)
+                });
+                
+                if (response.ok) {
+                    exitosas++;
+                    resultados.push(`✅ ${entrada.producto.nombre}: ${entrada.cantidad} unidades`);
+                } else {
+                    const error = await response.json();
+                    resultados.push(`❌ ${entrada.producto.nombre}: ${error.detail || 'Error desconocido'}`);
+                }
+            }
         }
         
         // Mostrar resultados
-        const exitosas = resultados.filter(r => r.success).length;
-        const fallidas = resultados.filter(r => !r.success);
-        
-        let mensaje = `Se registraron ${exitosas} de ${resultados.length} entradas exitosamente.\n\n`;
-        
-        if (fallidas.length > 0) {
-            mensaje += 'Errores:\n';
-            fallidas.forEach(f => {
-                mensaje += `• ${f.producto}: ${f.message}\n`;
-            });
+        let mensaje = `✅ ${exitosas} de ${entradasPendientes.length} entradas registradas exitosamente\n\n`;
+        mensaje += resultados.slice(0, 5).join('\n'); // Mostrar solo primeros 5
+        if (resultados.length > 5) {
+            mensaje += `\n... y ${resultados.length - 5} más`;
         }
-        
         alert(mensaje);
         
-        // Limpiar y actualizar
         if (exitosas > 0) {
+            // LIMPIAR TODO SIN ERRORES
             entradasPendientes = [];
+            productosSeleccionadosEntrada = [];
+            
+            // Actualizar interfaces
             actualizarListaEntradas();
-            cargarHistorialEntradas();
-            mostrarExito('Entradas registradas exitosamente');
+            
+            // Limpiar formulario de forma segura
+            try {
+                const fechaInput = document.getElementById('fecha');
+                if (fechaInput) {
+                    const now = new Date();
+                    fechaInput.value = now.toISOString().slice(0, 16);
+                }
+                
+                const origenInput = document.getElementById('origen_nombre');
+                if (origenInput) origenInput.value = '';
+                
+                const ubicacionInput = document.getElementById('ubicacion');
+                if (ubicacionInput) ubicacionInput.value = '';
+                
+                const notasInput = document.getElementById('notas');
+                if (notasInput) notasInput.value = '';
+                
+                const buscarInput = document.getElementById('buscarProducto');
+                if (buscarInput) {
+                    buscarInput.value = '';
+                    buscarInput.focus();
+                }
+                
+                // Deseleccionar producto
+                const productoContainer = document.getElementById('productoSeleccionado');
+                if (productoContainer) productoContainer.classList.add('hidden');
+                
+                // Deshabilitar botón
+                const btnAgregar = document.getElementById('btnAgregar');
+                if (btnAgregar) btnAgregar.disabled = true;
+                
+                // Ocultar contenedor de productos seleccionados
+                const productosContainer = document.getElementById('productosSeleccionadosContainer');
+                if (productosContainer) productosContainer.classList.add('hidden');
+                
+            } catch (e) {
+                console.error('Error al limpiar formulario:', e);
+            }
+            
+            // Recargar historial
+            await cargarHistorialEntradas();
+            
+            mostrarExito('🎉 Entradas registradas exitosamente');
         }
         
     } catch (error) {
+        console.error('Error completo:', error);
         alert(`Error al registrar entradas: ${error.message}`);
     }
 }
 
-// Historial
+// ===== ESCANEO =====
+function iniciarEscaneoEntrada() {
+    const modal = document.getElementById('modalEscaneo');
+    modal.classList.remove('hidden');
+    
+    setTimeout(() => {
+        if (!scanner) {
+            scanner = new QRScanner({
+                elementId: 'scannerEntrada',
+                onScan: procesarCodigoEscaneado,
+                onError: (error) => {
+                    console.error('Error del escáner:', error);
+                    alert('Error al acceder a la cámara');
+                    cerrarModalEscaneo();
+                }
+            });
+        }
+        scanner.start();
+    }, 100);
+}
+
+function cerrarModalEscaneo() {
+    if (scanner) {
+        scanner.stop();
+    }
+    const modal = document.getElementById('modalEscaneo');
+    modal.classList.add('hidden');
+    document.getElementById('codigoManual').value = '';
+}
+
+async function procesarCodigoEscaneado(resultado) {
+    if (resultado.valid) {
+        try {
+            const response = await fetch(`/api/productos/codigo/${resultado.code}`);
+            const producto = await response.json();
+            seleccionarProducto(producto);
+            cerrarModalEscaneo();
+            document.getElementById('cantidad').focus();
+        } catch (error) {
+            // Producto no encontrado
+            if (confirm(`El código "${resultado.code}" no existe. ¿Deseas crear un nuevo producto?`)) {
+                cerrarModalEscaneo();
+                setTimeout(() => {
+                    window.location.href = `/productos/crear?codigo=${encodeURIComponent(resultado.code)}`;
+                }, 500);
+            }
+        }
+    }
+}
+
+function procesarCodigoManual() {
+    const codigo = document.getElementById('codigoManual').value.trim();
+    if (!codigo) {
+        alert('Por favor ingresa un código');
+        return;
+    }
+    procesarCodigoEscaneado({ code: codigo, valid: true, type: 'manual' });
+}
+
+// ===== HISTORIAL =====
 async function cargarHistorialEntradas() {
     try {
         const response = await fetch('/api/movimientos/');
@@ -1178,7 +2062,7 @@ async function cargarHistorialEntradas() {
         
         const entradas = movimientos
             .filter(m => m.tipo === 'entrada')
-            .slice(0, 10); // Últimas 10
+            .slice(0, 10);
         
         const historial = document.getElementById('historialEntradas');
         
@@ -1193,10 +2077,8 @@ async function cargarHistorialEntradas() {
         }
         
         let html = '';
-        
         entradas.forEach(movimiento => {
             const fecha = new Date(movimiento.fecha_movimiento).toLocaleString();
-            
             html += `
                 <div class="historial-item">
                     <div class="historial-fecha">${fecha}</div>
@@ -1220,8 +2102,17 @@ async function cargarHistorialEntradas() {
         `;
     }
 }
-
-// Funciones auxiliares
+// ===== LIMPIAR TODA LA LISTA =====
+function limpiarLista() {
+    if (entradasPendientes.length === 0) return;
+    
+    if (confirm(`¿Eliminar todas las ${entradasPendientes.length} entradas pendientes?`)) {
+        entradasPendientes = [];
+        actualizarListaEntradas();
+        mostrarExito('🧹 Lista de entradas limpiada');
+    }
+}
+// ===== FUNCIONES AUXILIARES =====
 function mostrarExito(mensaje) {
     const alerta = document.createElement('div');
     alerta.className = 'alert alert-success';
@@ -1230,12 +2121,8 @@ function mostrarExito(mensaje) {
     alerta.style.top = '20px';
     alerta.style.right = '20px';
     alerta.style.zIndex = '1000';
-    
     document.body.appendChild(alerta);
-    
-    setTimeout(() => {
-        alerta.remove();
-    }, 3000);
+    setTimeout(() => alerta.remove(), 3000);
 }
 
 function crearModal(content) {
@@ -1256,12 +2143,9 @@ function mostrarModal(modal) {
 
 function cerrarModal() {
     const modal = document.querySelector('.modal');
-    if (modal) {
-        modal.remove();
-    }
+    if (modal) modal.remove();
 }
 
-// Para registrar múltiples (desde botón en header)
 function registrarMultiples() {
     registrarEntradas();
 }

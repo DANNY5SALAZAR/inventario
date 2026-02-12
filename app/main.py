@@ -7,6 +7,7 @@ from .database import get_db, init_db
 from . import crud, schemas
 from .routers import productos, movimientos, inventario
 from sqlalchemy.orm import Session
+from app.routers import inventario as dashboard_router
 
 # ===== Inicializar base de datos al iniciar la app (sin bloquear) =====
 init_db()  # Se ejecuta antes de crear la app
@@ -26,6 +27,7 @@ templates = Jinja2Templates(directory="app/templates")
 app.include_router(productos.router, prefix="/api")
 app.include_router(movimientos.router, prefix="/api")
 app.include_router(inventario.router, prefix="/api")
+app.include_router(dashboard_router.router, prefix="/api")
 
 # ===== RUTAS FRONTEND =====
 @app.get("/", response_class=HTMLResponse)

@@ -1,5 +1,5 @@
 # app/routers/movimientos.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query,File, UploadFile, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -8,6 +8,8 @@ from ..utils.pdf_generator import PDFGenerator
 import pandas as pd
 import io
 import json
+import os
+import shutil
 
 # Importaciones locales
 from .. import crud, schemas, models  # Añadí 'models' aquí
@@ -47,12 +49,24 @@ def crear_movimiento(
     Crear un nuevo movimiento (entrada o salida).
     """
     try:
+        # Limpiar campos según el tipo de movimiento
+        if movimiento.tipo == "salida":
+            # Para salidas: limpiar campos de entrada
+            movimiento.tipo_origen = None
+            movimiento.origen_nombre = None
+            movimiento.ubicacion = None
+        elif movimiento.tipo == "entrada":
+            # Para entradas: limpiar campos de salida
+            movimiento.cliente_destino = None
+        
         return crud.crear_movimiento(db=db, movimiento=movimiento)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import traceback
+        print(f"ERROR en crear_movimiento: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
-
+    
 @router.post("/entrada-rapida")
 def entrada_rapida(
     producto_id: int,
@@ -418,34 +432,42 @@ def exportar_movimientos_excel(
 @router.get("/salida/{salida_id}/pdf")
 def generar_pdf_salida(salida_id: int, db: Session = Depends(get_db)):
     """
-    Generar PDF de comprobante de salida.
+     Generar PDF de comprobante de salida individual.
     """
     try:
-        # Obtener todos los movimientos de esta salida
-        # (Necesitas tener un campo para agrupar salidas)
-        movimientos = db.query(models.Movimiento).filter(
-            # Aquí necesitas filtrar por el ID de la salida
-            # Depende de cómo estés agrupando los movimientos
-        ).all()
+        # Obtener el movimiento
+        movimiento = db.query(models.Movimiento).filter(
+            models.Movimiento.id == salida_id,
+            models.Movimiento.tipo == "salida"
+        ).first()
         
-        if not movimientos:
+        if not movimiento:
             raise HTTPException(status_code=404, detail="Salida no encontrada")
         
-        # Datos de la salida (del primer movimiento o de una tabla Salida)
-        primer_movimiento = movimientos[0]
+        # Obtener el producto
+        producto = movimiento.producto
+        
+        # Preparar datos de la salida
         salida_data = {
-            'destino': primer_movimiento.cliente_destino or "No especificado",
-            'razon': primer_movimiento.motivo or "No especificada",
-            'observaciones': primer_movimiento.notas or "",
-            'usuario': primer_movimiento.usuario or "admin",
-            'fecha': primer_movimiento.fecha_movimiento.strftime("%d/%m/%Y")
+            'destino': movimiento.cliente_destino or "No especificado",
+            'razon': movimiento.motivo or "No especificada",
+            'observaciones': movimiento.notas or "",
+            'usuario': movimiento.usuario or "admin",
+            'fecha': movimiento.fecha_movimiento.strftime("%d/%m/%Y %H:%M:%S")
         }
+        
+        # Preparar datos del producto
+        productos_data = [{
+            'producto_nombre': producto.nombre if producto else "Producto",
+            'producto_codigo': producto.codigo if producto else "N/A",
+            'cantidad': movimiento.cantidad
+        }]
         
         # Generar PDF
         pdf_generator = PDFGenerator()
-        pdf_bytes = pdf_generator.generar_comprobante_salida(salida_data, movimientos)
+        pdf_bytes = pdf_generator.generar_comprobante_salida(salida_data, productos_data)
         
-        # Devolver PDF
+        # Nombre del archivo
         filename = f"comprobante_salida_{salida_id}_{datetime.now().strftime('%Y%m%d')}.pdf"
         
         return Response(
@@ -454,8 +476,13 @@ def generar_pdf_salida(salida_id: int, db: Session = Depends(get_db)):
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        print(f"Error generando PDF: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
+    
 @router.post("/salida-multiple", response_model=List[schemas.Movimiento])
 def crear_salida_multiple(
     salida: schemas.SalidaMultipleCreate,
@@ -503,3 +530,129 @@ def crear_salida_multiple(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+  
+@router.post("/entrada-multiple", response_model=List[schemas.Movimiento])
+def crear_entrada_multiple(
+    entrada: schemas.EntradaMultipleCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    Crear una entrada con múltiples productos.
+    
+    - **tipo_origen**: compra, donacion, devolucion, traslado, ajuste
+    - **origen_nombre**: Proveedor, donante o tercero
+    - **ubicacion**: Opcional - Ubicación donde se almacenarán los productos
+    """
+    try:
+        # Preparar lista de productos
+        productos_lista = [
+            {
+                'producto_id': item['producto_id'],
+                'cantidad': item['cantidad']
+            }
+            for item in entrada.productos
+        ]
+        
+        # Crear movimientos
+        movimientos = crud.crear_entrada_multiple(
+            db=db,
+            productos=productos_lista,
+            tipo_origen=entrada.tipo_origen,
+            origen_nombre=entrada.origen_nombre,
+            ubicacion=entrada.ubicacion,
+            observaciones=entrada.observaciones,
+            usuario=entrada.usuario
+        )
+        
+        return movimientos
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    
+PDF_UPLOAD_DIR = "app/static/pdfs/salidas"
+os.makedirs(PDF_UPLOAD_DIR, exist_ok=True)
+
+@router.post("/{movimiento_id}/subir-pdf")
+async def subir_pdf_salida(
+    movimiento_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Subir PDF firmado para una salida específica.
+    """
+    try:
+        # Buscar movimiento
+        movimiento = db.query(models.Movimiento).filter(
+            models.Movimiento.id == movimiento_id,
+            models.Movimiento.tipo == "salida"
+        ).first()
+        
+        if not movimiento:
+            raise HTTPException(status_code=404, detail="Salida no encontrada")
+        
+        # Validar que sea PDF
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
+        
+        # Validar tamaño (máximo 10MB)
+        file.file.seek(0, 2)  # Ir al final
+        file_size = file.file.tell()
+        file.file.seek(0)  # Volver al inicio
+        
+        if file_size > 10 * 1024 * 1024:  # 10MB
+            raise HTTPException(status_code=400, detail="El archivo no puede ser mayor a 10MB")
+        
+        # Generar nombre único para el archivo
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        destino_limpio = "".join([c for c in (movimiento.cliente_destino or "salida") if c.isalnum() or c == ' '])[:20]
+        destino_limpio = destino_limpio.replace(' ', '_')
+        
+        filename = f"salida_{movimiento_id}_{destino_limpio}_{timestamp}.pdf"
+        file_path = os.path.join(PDF_UPLOAD_DIR, filename)
+        
+        # Guardar archivo
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Actualizar movimiento con la ruta del PDF
+        movimiento.pdf_firmado = f"/static/pdfs/salidas/{filename}"
+        movimiento.pdf_nombre = file.filename
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "PDF subido exitosamente",
+            "pdf_url": movimiento.pdf_firmado,
+            "movimiento_id": movimiento.id,
+            "filename": filename
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir PDF: {str(e)}")
+    
+
+@router.get("/{movimiento_id}/pdf-info")
+def obtener_info_pdf(movimiento_id: int, db: Session = Depends(get_db)):
+    """
+    Obtener información del PDF asociado a un movimiento.
+    """
+    movimiento = db.query(models.Movimiento).filter(
+        models.Movimiento.id == movimiento_id,
+        models.Movimiento.tipo == "salida"
+    ).first()
+    
+    if not movimiento:
+        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    
+    return {
+        "id": movimiento.id,
+        "tiene_pdf": movimiento.pdf_firmado is not None,
+        "pdf_url": movimiento.pdf_firmado,
+        "pdf_nombre": movimiento.pdf_nombre,
+        "fecha": movimiento.fecha_movimiento
+    }
