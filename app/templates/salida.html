@@ -1192,25 +1192,56 @@ function cerrarModalEscaneo() {
 async function procesarCodigoEscaneado(resultado) {
     if (resultado.valid) {
         try {
-            const response = await fetch(`/api/productos/codigo/${resultado.code}`);
-            const producto = await response.json();
+            // Usar el mismo endpoint que la búsqueda manual
+            const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(resultado.code)}`);
             
-            seleccionarProducto(producto);
-            cerrarModalEscaneo();
-            document.getElementById('cantidad').focus();
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const productos = await response.json();
+            
+            if (productos.length === 0) {
+                alert(`Producto no encontrado: ${resultado.code}`);
+                return;
+            }
+            
+            // Si hay exactamente 1 producto, seleccionarlo
+            if (productos.length === 1) {
+                seleccionarProducto(productos[0]);
+                cerrarModalEscaneo();
+                document.getElementById('cantidad').focus();
+            } else {
+                // Si hay múltiples, mostrar selector
+                mostrarSelectorProductos(productos);
+                cerrarModalEscaneo();
+            }
             
         } catch (error) {
-            alert(`Producto no encontrado: ${resultado.code}`);
+            console.error('Error buscando producto escaneado:', error);
+            alert(`Error al buscar producto: ${error.message}`);
         }
     }
 }
-// 🆕 AGREGAR ESTA NUEVA FUNCIÓN DESPUÉS DE procesarCodigoEscaneado
 async function procesarCodigoEscaneadoMultiple(resultado) {
     if (!resultado.valid) return;
     
     try {
-        const response = await fetch(`/api/productos/codigo/${resultado.code}`);
-        const producto = await response.json();
+        const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(resultado.code)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const productos = await response.json();
+        
+        if (productos.length === 0) {
+            mostrarErrorEnModal(`Producto no encontrado: ${resultado.code}`);
+            return;
+        }
+        
+        // Tomar el primer producto (el más relevante)
+        const producto = productos[0];
         
         // Verificar si ya fue escaneado
         if (productosEscaneadosModal.has(producto.id)) {
@@ -1222,7 +1253,8 @@ async function procesarCodigoEscaneadoMultiple(resultado) {
         preguntarCantidad(producto);
         
     } catch (error) {
-        mostrarErrorEnModal(`Producto no encontrado: ${resultado.code}`);
+        console.error('Error:', error);
+        mostrarErrorEnModal(`Error al buscar producto: ${error.message}`);
     }
 }
 function procesarCodigoManual() {

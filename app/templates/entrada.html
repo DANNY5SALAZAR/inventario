@@ -2028,19 +2028,39 @@ function cerrarModalEscaneo() {
 async function procesarCodigoEscaneado(resultado) {
     if (resultado.valid) {
         try {
-            const response = await fetch(`/api/productos/codigo/${resultado.code}`);
-            const producto = await response.json();
-            seleccionarProducto(producto);
-            cerrarModalEscaneo();
-            document.getElementById('cantidad').focus();
-        } catch (error) {
-            // Producto no encontrado
-            if (confirm(`El código "${resultado.code}" no existe. ¿Deseas crear un nuevo producto?`)) {
-                cerrarModalEscaneo();
-                setTimeout(() => {
-                    window.location.href = `/productos/crear?codigo=${encodeURIComponent(resultado.code)}`;
-                }, 500);
+            // Usar el mismo endpoint que la búsqueda manual
+            const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(resultado.code)}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+            
+            const productos = await response.json();
+            
+            if (productos.length === 0) {
+                if (confirm(`El código "${resultado.code}" no existe. ¿Deseas crear un nuevo producto?`)) {
+                    cerrarModalEscaneo();
+                    setTimeout(() => {
+                        window.location.href = `/productos/crear?codigo=${encodeURIComponent(resultado.code)}`;
+                    }, 500);
+                }
+                return;
+            }
+            
+            // Si hay exactamente 1 producto, seleccionarlo
+            if (productos.length === 1) {
+                seleccionarProducto(productos[0]);
+                cerrarModalEscaneo();
+                document.getElementById('cantidad').focus();
+            } else {
+                // Si hay múltiples, mostrar selector
+                mostrarSelectorProductos(productos);
+                cerrarModalEscaneo();
+            }
+            
+        } catch (error) {
+            console.error('Error buscando producto escaneado:', error);
+            alert(`Error al buscar producto: ${error.message}`);
         }
     }
 }

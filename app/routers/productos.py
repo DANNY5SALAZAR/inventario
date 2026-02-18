@@ -1,12 +1,16 @@
 # app/routers/productos.py
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from .. import crud, schemas
 from ..database import get_db
-from ..utils.codigos import generar_codigo_barras, generar_qr_code
+from ..utils.codigos import generar_codigo_barras, generar_qr_code, generar_codigo_producto
 from fastapi.responses import JSONResponse
 from fastapi import status
+import pandas as pd
+import io
+from typing import List
+import chardet
 
 router = APIRouter(prefix="/productos", tags=["productos"])
 
@@ -132,3 +136,134 @@ def obtener_qr_code(producto_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Error generando código QR")
     
     return {"qr_code": qr}
+
+@router.post("/cargar-excel")
+async def cargar_productos_excel(
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Carga masiva de productos desde archivo Excel o CSV
+    El archivo DEBE tener columna 'codigo' (único) y 'nombre'
+    """
+    try:
+        # Validar extensión
+        if not (archivo.filename.endswith('.xlsx') or 
+                archivo.filename.endswith('.xls') or 
+                archivo.filename.endswith('.csv')):
+            raise HTTPException(400, "Formato no soportado. Use .xlsx, .xls o .csv")
+        
+        print(f"📁 Procesando archivo: {archivo.filename}")
+        
+        # Leer archivo
+        contents = await archivo.read()
+        
+        # Procesar según extensión
+        if archivo.filename.endswith('.csv'):
+            encoding = chardet.detect(contents)['encoding'] or 'utf-8'
+            print(f"📄 Encoding detectado: {encoding}")
+            df = pd.read_csv(io.BytesIO(contents), encoding=encoding)
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+        
+        print(f"📊 Filas leídas: {len(df)}")
+        print(f"📋 Columnas: {list(df.columns)}")
+        
+        # Validar columnas obligatorias
+        if 'codigo' not in df.columns:
+            raise HTTPException(400, "El archivo debe tener una columna 'codigo'")
+        
+        if 'nombre' not in df.columns:
+            raise HTTPException(400, "El archivo debe tener una columna 'nombre'")
+        
+        # Validar que no haya códigos duplicados en el Excel
+        codigos_excel = df['codigo'].astype(str).str.strip().tolist()
+        codigos_duplicados = [c for c in set(codigos_excel) if codigos_excel.count(c) > 1]
+        
+        if codigos_duplicados:
+            raise HTTPException(400, 
+                f"Códigos duplicados en el Excel: {', '.join(codigos_duplicados[:5])}")
+        
+        # Validar que los códigos no existan ya en la BD
+        from .. import models
+        
+        codigos_existentes = []
+        for codigo in codigos_excel:
+            if codigo and codigo != 'nan':
+                existe = db.query(models.Producto).filter(
+                    models.Producto.codigo == codigo
+                ).first()
+                if existe:
+                    codigos_existentes.append(codigo)
+        
+        if codigos_existentes:
+            raise HTTPException(400, 
+                f"Los siguientes códigos ya existen en la BD: {', '.join(codigos_existentes[:5])}")
+        
+        # Preparar resultados
+        resultados = []
+        exitosos = 0
+        fallidos = 0
+        
+        for idx, row in df.iterrows():
+            try:
+                # Obtener código (obligatorio)
+                codigo = str(row['codigo']).strip()
+                if not codigo or codigo == 'nan' or codigo == '':
+                    raise ValueError(f"Código vacío en fila {idx+2}")
+                
+                # Validar nombre
+                nombre = str(row['nombre']).strip()
+                if not nombre or nombre == 'nan' or nombre == '':
+                    raise ValueError(f"Nombre vacío en fila {idx+2} (código: {codigo})")
+                
+                # Crear producto con el código proporcionado
+                producto = models.Producto(
+                    codigo=codigo,
+                    nombre=nombre,
+                    descripcion=str(row.get('descripcion', '')) if pd.notna(row.get('descripcion', '')) else '',
+                    categoria=str(row.get('categoria', '')) if pd.notna(row.get('categoria', '')) else '',
+                    stock_minimo=int(row.get('stock_minimo', 0)) if pd.notna(row.get('stock_minimo', 0)) else 0,
+                    stock_actual=0
+                )
+                
+                db.add(producto)
+                db.flush()
+                
+                resultados.append({
+                    "codigo": codigo,
+                    "nombre": nombre,
+                    "categoria": producto.categoria,
+                    "exitoso": True,
+                    "error": None
+                })
+                exitosos += 1
+                
+            except Exception as e:
+                print(f"❌ Error fila {idx+2}: {str(e)}")
+                resultados.append({
+                    "codigo": row.get('codigo', f'Fila {idx+2}'),
+                    "nombre": row.get('nombre', ''),
+                    "categoria": row.get('categoria', ''),
+                    "exitoso": False,
+                    "error": str(e)
+                })
+                fallidos += 1
+        
+        # Commit final
+        db.commit()
+        
+        return {
+            "total": len(resultados),
+            "exitosos": exitosos,
+            "fallidos": fallidos,
+            "productos": resultados
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Error procesando archivo: {str(e)}")

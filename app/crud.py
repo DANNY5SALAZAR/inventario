@@ -14,6 +14,10 @@ def get_producto_por_codigo(db: Session, codigo: str):
     return db.query(models.Producto).filter(models.Producto.codigo == codigo).first()
 
 def get_productos(db: Session, skip: int = 0, limit: int = 100):
+    """
+    Obtener productos con carga diferida (lazy loading)
+    Solo trae los productos, no los movimientos asociados
+    """
     return db.query(models.Producto).offset(skip).limit(limit).all()
 
 def crear_producto(db: Session, producto: schemas.ProductoCreate):
@@ -49,6 +53,9 @@ def actualizar_producto(db: Session, producto_id: int, producto: schemas.Product
     db.commit()
     db.refresh(db_producto)
     return db_producto
+def contar_productos(db: Session):
+    """Cuenta productos sin cargar todos los datos"""
+    return db.query(models.Producto).count()
 
 def eliminar_producto(db: Session, producto_id: int):
     db_producto = get_producto(db, producto_id)
@@ -102,7 +109,10 @@ def get_movimientos_por_producto(db: Session, producto_id: int):
 # Inventario y reportes
 # ---------------------------
 def get_productos_bajo_stock(db: Session):
-    return db.query(models.Producto).filter(models.Producto.stock_actual < models.Producto.stock_minimo).all()
+    """Solo trae productos con stock bajo, sin datos extra"""
+    return db.query(models.Producto).filter(
+        models.Producto.stock_actual < models.Producto.stock_minimo
+    ).all()
 
 # ---------------------------
 # Búsqueda de productos

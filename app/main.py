@@ -41,6 +41,9 @@ async def pagina_productos(request: Request):
 @app.get("/productos/crear", response_class=HTMLResponse)
 async def pagina_crear_producto(request: Request):
     return templates.TemplateResponse("crear_producto.html", {"request": request, "title": "Crear Producto"})
+@app.get("/productos/cargar-excel", response_class=HTMLResponse)
+async def pagina_cargar_excel(request: Request):
+    return templates.TemplateResponse("cargar_excel.html", {"request": request, "title": "Carga Masiva de Productos"})
 
 @app.get("/entrada", response_class=HTMLResponse)
 async def pagina_entrada(request: Request):
@@ -86,6 +89,10 @@ async def pagina_editar_producto(request: Request, producto_id: int, db: Session
         "editar_producto.html",
         {"request": request, "title": f"Editar: {producto.nombre}", "producto": producto}
     )
+
+@app.get("/productos/cargar-excel", response_class=HTMLResponse)
+async def pagina_cargar_excel(request: Request):
+    return templates.TemplateResponse("cargar_excel.html", {"request": request, "title": "Cargar Productos desde Excel"})
 
 # ===== REDIRECCIONES =====
 @app.get("/volver-a-productos")

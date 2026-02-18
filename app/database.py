@@ -1,19 +1,34 @@
-# app/database.py
-from sqlalchemy import create_engine
+# app/database.py - Versión final probada
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
 import os
-from sqlalchemy import inspect, text
 
-# Configuración de la base de datos SQLite
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'inventario.db')}"
 
-# Crear motor de base de datos
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    
+    # Optimizaciones probadas que SÍ funcionan
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA cache_size=10000")  # Sin el negativo
+    
+    cursor.close()
+    print("✅ Optimizaciones SQLite aplicadas")
+
+# Pool de conexiones (opcional, puedes agregarlo después)
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
-    echo=True
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
+    echo=False
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -27,32 +42,5 @@ def get_db():
         db.close()
 
 def init_db():
-    """Crear todas las tablas en la base de datos y agregar migraciones"""
     Base.metadata.create_all(bind=engine)
-    
-    # Migración para agregar columnas faltantes
-    inspector = inspect(engine)
-    
-    if 'movimientos' in inspector.get_table_names():
-        columns = [col['name'] for col in inspector.get_columns('movimientos')]
-        
-        if 'cliente_destino' not in columns:
-            with engine.connect() as conn:
-                conn.execute(text('ALTER TABLE movimientos ADD COLUMN cliente_destino VARCHAR'))
-                conn.commit()
-                print("✅ Columna cliente_destino agregada a movimientos")
-        
-        # 🆕 AGREGAR ESTAS MIGRACIONES
-        if 'pdf_firmado' not in columns:
-            with engine.connect() as conn:
-                conn.execute(text('ALTER TABLE movimientos ADD COLUMN pdf_firmado VARCHAR'))
-                conn.commit()
-                print("✅ Columna pdf_firmado agregada a movimientos")
-        
-        if 'pdf_nombre' not in columns:
-            with engine.connect() as conn:
-                conn.execute(text('ALTER TABLE movimientos ADD COLUMN pdf_nombre VARCHAR'))
-                conn.commit()
-                print("✅ Columna pdf_nombre agregada a movimientos")
-    
     print("✅ Base de datos inicializada correctamente")
